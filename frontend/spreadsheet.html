@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Real-Time Spreadsheet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .spreadsheet-container {
+            flex: 2;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .sidebar {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .input-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        #sheet {
+            width: 100%;
+            min-height: 200px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f8f8;
+        }
+        .active-users, .queue-users {
+            margin-top: 20px;
+        }
+        .active-users h3, .queue-users h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+        }
+        .user-list li {
+            padding: 8px;
+            margin: 4px 0;
+            background: #f8f8f8;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .metadata {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spreadsheet-container">
+            <div class="header">
+                <h2>Real-Time Spreadsheet</h2>
+                <div>
+                    <span id="current-user"></span>
+                    <button onclick="logout()">Logout</button>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="request-write" onclick="requestWrite()">Request Write Access</button>
+                <button id="release-lock" onclick="releaseLock()" disabled>Release Lock</button>
+            </div>
+            <div id="message" class="message"></div>
+            <div class="input-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" placeholder="Enter title" disabled>
+            </div>
+            <div class="input-group">
+                <label for="data">Content:</label>
+                <textarea id="data" placeholder="Enter your content here" disabled></textarea>
+            </div>
+            <button id="save-data" onclick="writeData()" disabled>Save Data</button>
+            <div id="sheet"></div>
+            <div id="metadata" class="metadata"></div>
+        </div>
+        <div class="sidebar">
+            <div class="active-users">
+                <h3>Currently Editing</h3>
+                <ul id="active-users" class="user-list"></ul>
+            </div>
+            <div class="queue-users">
+                <h3>Waiting in Queue</h3>
+                <ul id="queue-users" class="user-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hasWriteAccess = false;
+        let updateInterval;
+
+        // Check authentication on page load
+        checkAuth();
+
+        async function checkAuth() {
+            const response = await fetch('/check_auth');
+            const data = await response.json();
+            if (!data.authenticated) {
+                window.location.href = '/';
+            } else {
+                document.getElementById('current-user').textContent = `Logged in as: ${data.username}`;
+                startDataUpdates();
+            }
+        }
+
+        async function requestWrite() {
+            try {
+                const response = await fetch('/request_write', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    hasWriteAccess = true;
+                    document.getElementById('request-write').disabled = true;
+                    document.getElementById('release-lock').disabled = false;
+                    document.getElementById('title').disabled = false;
+                    document.getElementById('data').disabled = false;
+                    document.getElementById('save-data').disabled = false;
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                    // Reset write access if request failed
+                    hasWriteAccess = false;
+                    document.getElementById('request-write').disabled = false;
+                    document.getElementById('release-lock').disabled = true;
+                    document.getElementById('title').disabled = true;
+                    document.getElementById('data').disabled = true;
+                    document.getElementById('save-data').disabled = true;
+                }
+            } catch (error) {
+                showMessage('Failed to request write access', 'error');
+                // Reset write access on error
+                hasWriteAccess = false;
+                document.getElementById('request-write').disabled = false;
+                document.getElementById('release-lock').disabled = true;
+                document.getElementById('title').disabled = true;
+                document.getElementById('data').disabled = true;
+                document.getElementById('save-data').disabled = true;
+            }
+        }
+
+        async function releaseLock() {
+            try {
+                const response = await fetch('/release_lock', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    hasWriteAccess = false;
+                    document.getElementById('request-write').disabled = false;
+                    document.getElementById('release-lock').disabled = true;
+                    document.getElementById('title').disabled = true;
+                    document.getElementById('data').disabled = true;
+                    document.getElementById('save-data').disabled = true;
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                    // If release failed, keep the current state
+                    if (data.error === "You do not own the lock!") {
+                        hasWriteAccess = false;
+                        document.getElementById('request-write').disabled = false;
+                        document.getElementById('release-lock').disabled = true;
+                        document.getElementById('title').disabled = true;
+                        document.getElementById('data').disabled = true;
+                        document.getElementById('save-data').disabled = true;
+                    }
+                }
+            } catch (error) {
+                showMessage('Failed to release lock', 'error');
+            }
+        }
+
+        async function writeData() {
+            const title = document.getElementById('title').value;
+            const data = document.getElementById('data').value;
+            
+            try {
+                const response = await fetch('/write_data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, data })
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('title').value = '';
+                    document.getElementById('data').value = '';
+                } else {
+                    showMessage(result.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to save data', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                showMessage('Failed to logout', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+        }
+
+        function updateActiveUsers(users) {
+            const userList = document.getElementById('active-users');
+            // Only update if the content has changed
+            const currentContent = Array.from(userList.children).map(li => li.textContent).join(',');
+            const newContent = users.join(',');
+            
+            if (currentContent !== newContent) {
+                userList.innerHTML = '';
+                if (users.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'No one is currently editing';
+                    userList.appendChild(li);
+                    return;
+                }
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = user;
+                    userList.appendChild(li);
+                });
+            }
+        }
+
+        function updateQueueUsers(users) {
+            const userList = document.getElementById('queue-users');
+            // Only update if the content has changed
+            const currentContent = Array.from(userList.children).map(li => li.textContent).join(',');
+            const newContent = users.map((user, index) => `${user} (Position: ${index + 1})`).join(',');
+            
+            if (currentContent !== newContent) {
+                userList.innerHTML = '';
+                if (users.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = 'No users waiting';
+                    userList.appendChild(li);
+                    return;
+                }
+                users.forEach((user, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user} (Position: ${index + 1})`;
+                    userList.appendChild(li);
+                });
+            }
+        }
+
+        function updateSpreadsheet(data, lastUser, lastUpdate) {
+            const sheet = document.getElementById('sheet');
+            // Only update if the content has changed
+            if (sheet.textContent !== (data ? data.split('\n').slice(1).join('\n') : 'No data available yet.')) {
+                if (data) {
+                    // Split the data into title and content
+                    const lines = data.split('\n');
+                    const title = lines[0];
+                    const content = lines.slice(1).join('\n');
+                    
+                    // Update the input fields if we have write access
+                    if (hasWriteAccess) {
+                        document.getElementById('title').value = title;
+                        document.getElementById('data').value = content;
+                    }
+                    
+                    // Display the content
+                    sheet.textContent = content;
+                } else {
+                    sheet.textContent = 'No data available yet.';
+                }
+            }
+
+            const metadata = document.getElementById('metadata');
+            if (lastUser && lastUpdate) {
+                const date = new Date(lastUpdate);
+                const newMetadata = `Last updated by ${lastUser} on ${date.toLocaleString()}`;
+                if (metadata.textContent !== newMetadata) {
+                    metadata.textContent = newMetadata;
+                }
+            } else if (metadata.textContent !== '') {
+                metadata.textContent = '';
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/read_data');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateSpreadsheet(data.data, data.last_user, data.last_update);
+                    updateActiveUsers(data.active_users);
+                    updateQueueUsers(data.queue_users);
+                    
+                    // Update write access status based on active users
+                    const currentUser = document.getElementById('current-user').textContent.split(': ')[1];
+                    const hasAccess = data.active_users.includes(currentUser);
+                    
+                    // Only update UI if access status has changed
+                    if (hasAccess !== hasWriteAccess) {
+                        hasWriteAccess = hasAccess;
+                        document.getElementById('request-write').disabled = hasAccess;
+                        document.getElementById('release-lock').disabled = !hasAccess;
+                        document.getElementById('title').disabled = !hasAccess;
+                        document.getElementById('data').disabled = !hasAccess;
+                        document.getElementById('save-data').disabled = !hasAccess;
+                    }
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to fetch data', 'error');
+            }
+        }
+
+        function startDataUpdates() {
+            fetchData(); // Initial fetch
+            updateInterval = setInterval(fetchData, 2000); // Update every 2 seconds instead of 1
+        }
+
+        // Clean up interval when leaving the page
+        window.addEventListener('beforeunload', () => {
+            clearInterval(updateInterval);
+        });
+    </script>
+</body>
+</html> 
