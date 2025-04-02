@@ -1,412 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Real-Time Spreadsheet</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spreadsheet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .spreadsheet-container {
-            flex: 2;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .sidebar {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .input-group {
-            margin-bottom: 20px;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .input-group input, .input-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        .input-group textarea {
-            min-height: 200px;
-            resize: vertical;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
+        .card {
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
         }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            padding: 1rem;
         }
-        button:hover:not(:disabled) {
-            background-color: #45a049;
+        .table {
+            margin-bottom: 0;
         }
-        #sheet {
-            width: 100%;
-            min-height: 200px;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 20px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            background-color: #f8f8f8;
+        .table th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
         }
-        .active-users, .queue-users {
-            margin-top: 20px;
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
         }
-        .active-users h3, .queue-users h3 {
-            margin-top: 0;
-            color: #333;
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
         }
-        .user-list {
-            list-style: none;
-            padding: 0;
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
         }
-        .user-list li {
-            padding: 8px;
-            margin: 4px 0;
-            background: #f8f8f8;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
         }
-        .message {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+        .modal-content {
+            border: none;
+            border-radius: 10px;
         }
-        .error {
-            background-color: #ffebee;
-            color: #d32f2f;
+        .modal-header {
+            border-bottom: 1px solid #eee;
+            padding: 1.5rem;
         }
-        .success {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+        .modal-body {
+            padding: 1.5rem;
         }
-        .metadata {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 10px;
+        .modal-footer {
+            border-top: 1px solid #eee;
+            padding: 1.5rem;
+        }
+        .alert {
+            display: none;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="spreadsheet-container">
-            <div class="header">
-                <h2>Real-Time Spreadsheet</h2>
-                <div>
-                    <span id="current-user"></span>
-                    <button onclick="logout()">Logout</button>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main content -->
+            <main class="col-12 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Spreadsheet</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="saveBtn" disabled>Save Changes</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="writeAccessBtn">Request Write Access</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="logoutBtn">Logout</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="controls">
-                <button id="request-write" onclick="requestWrite()">Request Write Access</button>
-                <button id="release-lock" onclick="releaseLock()" disabled>Release Lock</button>
-            </div>
-            <div id="message" class="message"></div>
-            <div class="input-group">
-                <label for="title">Title:</label>
-                <input type="text" id="title" placeholder="Enter title" disabled>
-            </div>
-            <div class="input-group">
-                <label for="data">Content:</label>
-                <textarea id="data" placeholder="Enter your content here" disabled></textarea>
-            </div>
-            <button id="save-data" onclick="writeData()" disabled>Save Data</button>
-            <div id="sheet"></div>
-            <div id="metadata" class="metadata"></div>
+                <div class="alert alert-danger" id="errorAlert" role="alert"></div>
+                <div class="alert alert-success" id="successAlert" role="alert"></div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Sales Data</h5>
+                        <button class="btn btn-primary" id="addSaleBtn">
+                            <i class="bi bi-plus-lg"></i> Add Sale
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Invoice #</th>
+                                        <th>Customer</th>
+                                        <th>Location</th>
+                                        <th>Product</th>
+                                        <th>Category</th>
+                                        <th>Volume</th>
+                                        <th>Unit</th>
+                                        <th>Created By</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="salesTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
-        <div class="sidebar">
-            <div class="active-users">
-                <h3>Currently Editing</h3>
-                <ul id="active-users" class="user-list"></ul>
-            </div>
-            <div class="queue-users">
-                <h3>Waiting in Queue</h3>
-                <ul id="queue-users" class="user-list"></ul>
+    </div>
+
+    <!-- Add Sale Modal -->
+    <div class="modal fade" id="addSaleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Sale</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSaleForm">
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="invoiceNumber" class="form-label">Invoice Number</label>
+                            <input type="text" class="form-control" id="invoiceNumber" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Customer Name</label>
+                            <input type="text" class="form-control" id="customerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Location/Store</label>
+                            <input type="text" class="form-control" id="location" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productName" class="form-label">Product Name</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="volumeSold" class="form-label">Volume Sold</label>
+                            <input type="number" step="0.01" class="form-control" id="volumeSold" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit" required>
+                                <option value="L">Liters (L)</option>
+                                <option value="ml">Milliliters (ml)</option>
+                                <option value="gal">Gallons (gal)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSaleBtn">Save Sale</button>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
+        let currentUser = null;
         let hasWriteAccess = false;
-        let updateInterval;
-
+        let writeAccessTimer = null;
+        let inactivityTimer = null;
+        const addSaleModal = new bootstrap.Modal(document.getElementById('addSaleModal'));
+        
         // Check authentication on page load
-        checkAuth();
-
         async function checkAuth() {
-            const response = await fetch('/check_auth');
-            const data = await response.json();
-            if (!data.authenticated) {
-                window.location.href = '/';
-            } else {
-                document.getElementById('current-user').textContent = `Logged in as: ${data.username}`;
-                startDataUpdates();
+            try {
+                const response = await fetch('/check_auth');
+                const data = await response.json();
+                
+                if (!data.authenticated) {
+                    window.location.replace('/');
+                    return;
+                }
+                
+                currentUser = data.username;
+                loadData();
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.replace('/');
             }
         }
 
-        async function requestWrite() {
+        // Initialize Socket.IO connection
+        const socket = io();
+
+        // Socket.IO event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('data_updated', (data) => {
+            loadData();
+        });
+
+        // Load data from server
+        async function loadData() {
             try {
-                const response = await fetch('/request_write', {
+                const response = await fetch('/read');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Update categories dropdown
+                    const categorySelect = document.getElementById('category');
+                    categorySelect.innerHTML = data.categories.map(cat => 
+                        `<option value="${cat[0]}">${cat[0]}</option>`
+                    ).join('');
+
+                    // Update sales table
+                    const tableBody = document.getElementById('salesTableBody');
+                    tableBody.innerHTML = data.sales_data.map(sale => `
+                        <tr>
+                            <td>${sale[0]}</td>
+                            <td>${sale[1]}</td>
+                            <td>${sale[2]}</td>
+                            <td>${sale[3]}</td>
+                            <td>${sale[4]}</td>
+                            <td>${sale[5]}</td>
+                            <td>${sale[6]}</td>
+                            <td>${sale[7]}</td>
+                            <td>${sale[8]}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    showError(data.error || 'Failed to load data');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Failed to load data');
+            }
+        }
+
+        // Request write access
+        document.getElementById('writeAccessBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/request_write_access', {
                     method: 'POST'
                 });
                 const data = await response.json();
                 
                 if (response.ok) {
                     hasWriteAccess = true;
-                    document.getElementById('request-write').disabled = true;
-                    document.getElementById('release-lock').disabled = false;
-                    document.getElementById('title').disabled = false;
-                    document.getElementById('data').disabled = false;
-                    document.getElementById('save-data').disabled = false;
-                    showMessage(data.message, 'success');
+                    document.getElementById('saveBtn').disabled = false;
+                    document.getElementById('addSaleBtn').disabled = false;
+                    showSuccess('Write access granted');
+                    
+                    // Set timer to release write access after 10 seconds of inactivity
+                    if (writeAccessTimer) {
+                        clearTimeout(writeAccessTimer);
+                    }
+                    writeAccessTimer = setTimeout(releaseWriteAccess, 10000);
                 } else {
-                    showMessage(data.error, 'error');
-                    // Reset write access if request failed
-                    hasWriteAccess = false;
-                    document.getElementById('request-write').disabled = false;
-                    document.getElementById('release-lock').disabled = true;
-                    document.getElementById('title').disabled = true;
-                    document.getElementById('data').disabled = true;
-                    document.getElementById('save-data').disabled = true;
+                    showError(data.error || 'Failed to get write access');
                 }
             } catch (error) {
-                showMessage('Failed to request write access', 'error');
-                // Reset write access on error
-                hasWriteAccess = false;
-                document.getElementById('request-write').disabled = false;
-                document.getElementById('release-lock').disabled = true;
-                document.getElementById('title').disabled = true;
-                document.getElementById('data').disabled = true;
-                document.getElementById('save-data').disabled = true;
+                console.error('Error requesting write access:', error);
+                showError('Failed to request write access');
             }
-        }
+        });
 
-        async function releaseLock() {
+        // Release write access
+        async function releaseWriteAccess() {
             try {
-                const response = await fetch('/release_lock', {
+                const response = await fetch('/release_write_access', {
                     method: 'POST'
                 });
                 const data = await response.json();
                 
                 if (response.ok) {
                     hasWriteAccess = false;
-                    document.getElementById('request-write').disabled = false;
-                    document.getElementById('release-lock').disabled = true;
-                    document.getElementById('title').disabled = true;
-                    document.getElementById('data').disabled = true;
-                    document.getElementById('save-data').disabled = true;
-                    showMessage(data.message, 'success');
-                } else {
-                    showMessage(data.error, 'error');
-                    // If release failed, keep the current state
-                    if (data.error === "You do not own the lock!") {
-                        hasWriteAccess = false;
-                        document.getElementById('request-write').disabled = false;
-                        document.getElementById('release-lock').disabled = true;
-                        document.getElementById('title').disabled = true;
-                        document.getElementById('data').disabled = true;
-                        document.getElementById('save-data').disabled = true;
-                    }
+                    document.getElementById('saveBtn').disabled = true;
+                    document.getElementById('addSaleBtn').disabled = true;
+                    showSuccess('Write access released');
                 }
             } catch (error) {
-                showMessage('Failed to release lock', 'error');
+                console.error('Error releasing write access:', error);
             }
         }
 
-        async function writeData() {
-            const title = document.getElementById('title').value;
-            const data = document.getElementById('data').value;
-            
+        // Add sale button click handler
+        document.getElementById('addSaleBtn').addEventListener('click', () => {
+            if (!hasWriteAccess) {
+                showError('You need write access to add a sale');
+                return;
+            }
+            addSaleModal.show();
+        });
+
+        // Save sale button click handler
+        document.getElementById('saveSaleBtn').addEventListener('click', async () => {
+            const form = document.getElementById('addSaleForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const saleData = {
+                date: document.getElementById('date').value,
+                invoice_number: document.getElementById('invoiceNumber').value,
+                customer_name: document.getElementById('customerName').value,
+                location: document.getElementById('location').value,
+                product_name: document.getElementById('productName').value,
+                category: document.getElementById('category').value,
+                volume_sold: document.getElementById('volumeSold').value,
+                unit: document.getElementById('unit').value
+            };
+
             try {
-                const response = await fetch('/write_data', {
+                const response = await fetch('/write', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, data })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(saleData)
                 });
-                const result = await response.json();
                 
-                if (response.ok) {
-                    showMessage(result.message, 'success');
-                    document.getElementById('title').value = '';
-                    document.getElementById('data').value = '';
-                } else {
-                    showMessage(result.error, 'error');
-                }
-            } catch (error) {
-                showMessage('Failed to save data', 'error');
-            }
-        }
-
-        async function logout() {
-            try {
-                await fetch('/logout', { method: 'POST' });
-                window.location.href = '/';
-            } catch (error) {
-                showMessage('Failed to logout', 'error');
-            }
-        }
-
-        function showMessage(message, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = message;
-            messageDiv.className = `message ${type}`;
-        }
-
-        function updateActiveUsers(users) {
-            const userList = document.getElementById('active-users');
-            // Only update if the content has changed
-            const currentContent = Array.from(userList.children).map(li => li.textContent).join(',');
-            const newContent = users.join(',');
-            
-            if (currentContent !== newContent) {
-                userList.innerHTML = '';
-                if (users.length === 0) {
-                    const li = document.createElement('li');
-                    li.textContent = 'No one is currently editing';
-                    userList.appendChild(li);
-                    return;
-                }
-                users.forEach(user => {
-                    const li = document.createElement('li');
-                    li.textContent = user;
-                    userList.appendChild(li);
-                });
-            }
-        }
-
-        function updateQueueUsers(users) {
-            const userList = document.getElementById('queue-users');
-            // Only update if the content has changed
-            const currentContent = Array.from(userList.children).map(li => li.textContent).join(',');
-            const newContent = users.map((user, index) => `${user} (Position: ${index + 1})`).join(',');
-            
-            if (currentContent !== newContent) {
-                userList.innerHTML = '';
-                if (users.length === 0) {
-                    const li = document.createElement('li');
-                    li.textContent = 'No users waiting';
-                    userList.appendChild(li);
-                    return;
-                }
-                users.forEach((user, index) => {
-                    const li = document.createElement('li');
-                    li.textContent = `${user} (Position: ${index + 1})`;
-                    userList.appendChild(li);
-                });
-            }
-        }
-
-        function updateSpreadsheet(data, lastUser, lastUpdate) {
-            const sheet = document.getElementById('sheet');
-            // Only update if the content has changed
-            if (sheet.textContent !== (data ? data.split('\n').slice(1).join('\n') : 'No data available yet.')) {
-                if (data) {
-                    // Split the data into title and content
-                    const lines = data.split('\n');
-                    const title = lines[0];
-                    const content = lines.slice(1).join('\n');
-                    
-                    // Update the input fields if we have write access
-                    if (hasWriteAccess) {
-                        document.getElementById('title').value = title;
-                        document.getElementById('data').value = content;
-                    }
-                    
-                    // Display the content
-                    sheet.textContent = content;
-                } else {
-                    sheet.textContent = 'No data available yet.';
-                }
-            }
-
-            const metadata = document.getElementById('metadata');
-            if (lastUser && lastUpdate) {
-                const date = new Date(lastUpdate);
-                const newMetadata = `Last updated by ${lastUser} on ${date.toLocaleString()}`;
-                if (metadata.textContent !== newMetadata) {
-                    metadata.textContent = newMetadata;
-                }
-            } else if (metadata.textContent !== '') {
-                metadata.textContent = '';
-            }
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch('/read_data');
                 const data = await response.json();
                 
                 if (response.ok) {
-                    updateSpreadsheet(data.data, data.last_user, data.last_update);
-                    updateActiveUsers(data.active_users);
-                    updateQueueUsers(data.queue_users);
-                    
-                    // Update write access status based on active users
-                    const currentUser = document.getElementById('current-user').textContent.split(': ')[1];
-                    const hasAccess = data.active_users.includes(currentUser);
-                    
-                    // Only update UI if access status has changed
-                    if (hasAccess !== hasWriteAccess) {
-                        hasWriteAccess = hasAccess;
-                        document.getElementById('request-write').disabled = hasAccess;
-                        document.getElementById('release-lock').disabled = !hasAccess;
-                        document.getElementById('title').disabled = !hasAccess;
-                        document.getElementById('data').disabled = !hasAccess;
-                        document.getElementById('save-data').disabled = !hasAccess;
-                    }
+                    addSaleModal.hide();
+                    form.reset();
+                    showSuccess('Sale added successfully');
+                    loadData();
                 } else {
-                    showMessage(data.error, 'error');
+                    showError(data.error || 'Failed to add sale');
                 }
             } catch (error) {
-                showMessage('Failed to fetch data', 'error');
+                console.error('Error adding sale:', error);
+                showError('Failed to add sale');
             }
-        }
-
-        function startDataUpdates() {
-            fetchData(); // Initial fetch
-            updateInterval = setInterval(fetchData, 2000); // Update every 2 seconds instead of 1
-        }
-
-        // Clean up interval when leaving the page
-        window.addEventListener('beforeunload', () => {
-            clearInterval(updateInterval);
         });
+
+        // Logout button click handler
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    window.location.replace('/');
+                } else {
+                    showError('Failed to logout');
+                }
+            } catch (error) {
+                console.error('Error logging out:', error);
+                showError('Failed to logout');
+            }
+        });
+
+        // Show error message
+        function showError(message) {
+            const alert = document.getElementById('errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const alert = document.getElementById('successAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        // Check authentication when page loads
+        checkAuth();
     </script>
 </body>
 </html> 
