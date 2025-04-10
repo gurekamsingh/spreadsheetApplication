@@ -1,16 +1,85 @@
 # Spreadsheet Application
 
-A real-time collaborative spreadsheet application built with Flask, DuckDB, and Redis. This application allows multiple users to view sales data while ensuring only one user can edit at a time through a write access queue system.
+A real-time collaborative spreadsheet application for tracking sales data.
 
 ## Features
 
-- User Authentication (Signup/Login)
+- User authentication (login/signup)
 - Real-time data updates using Socket.IO
-- Write access queue system for data consistency
-- Sales data management with categories
-- Responsive web interface
-- Data persistence using DuckDB
-- Redis for managing write access and real-time features
+- Write access management with queue system
+- Visual write access status indicator
+- Sales data management (add, view)
+- Category management
+- Responsive design
+
+## Write Access System
+
+The application implements a write access system to prevent concurrent edits:
+
+1. Users can request write access
+2. If no one has write access, it's granted immediately
+3. If someone else has write access, the user is added to a queue
+4. Write access is automatically released after 10 seconds of inactivity
+5. When write access is released, it's granted to the next user in the queue
+6. Users can only edit their own entries
+7. A visual indicator shows when a user has write access
+
+## Technologies Used
+
+- Frontend: HTML, CSS, JavaScript, Bootstrap 5
+- Backend: Python, Flask, Socket.IO
+- Database: DuckDB
+- Authentication: Session-based
+- Real-time updates: Socket.IO
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Start the application:
+   ```bash
+   python app.py
+   ```
+
+3. Access the application at `http://localhost:5000`
+
+## Project Structure
+
+```
+spreadsheetApplication/
+├── backend/
+│   ├── app.py
+│   ├── database/
+│   │   ├── schema.sql
+│   │   └── spreadsheet.db
+│   └── routes/
+│       ├── auth.py
+│       └── spreadsheet.py
+├── frontend/
+│   ├── index.html
+│   ├── signup.html
+│   └── spreadsheet.html
+└── requirements.txt
+```
+
+## Security Features
+
+- Session-based authentication
+- Write access control
+- Input validation
+- SQL injection prevention
+- XSS protection
+
+## Future Improvements
+
+- Add data export functionality
+- Implement data filtering and sorting
+- Add user roles and permissions
+- Implement data backup system
+- Add data visualization features
 
 ## Prerequisites
 
@@ -98,45 +167,8 @@ This will display:
 - Table schemas
 - Sample data (first 5 rows) from each table
 
-## Write Access System
-
-The application implements a write access queue system to ensure data consistency:
-
-1. Only one user can have write access at a time
-2. Users must request write access to make changes
-3. Write access is automatically released after 10 seconds of inactivity
-4. Other users are queued for write access
-
 ## API Endpoints
 
 ### Authentication
 - `POST /signup` - Register a new user
-- `POST /login` - User login
-- `POST /logout` - User logout
-- `GET /check_auth` - Check authentication status
-
-### Spreadsheet Operations
-- `GET /read` - Read sales data
-- `POST /write` - Write new sale data
-- `POST /request_write_access` - Request write access
-- `POST /release_write_access` - Release write access
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Flask web framework
-- DuckDB for data storage
-- Redis for real-time features
-- Socket.IO for real-time communication
-- Bootstrap for the UI components
+- `POST /login`
