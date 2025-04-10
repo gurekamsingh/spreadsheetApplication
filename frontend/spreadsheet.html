@@ -73,6 +73,9 @@
                     <h1 class="h2">Spreadsheet</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
+                            <span id="writeAccessStatus" class="badge bg-success me-2" style="display: none;">
+                                <i class="bi bi-pencil"></i> Write Access
+                            </span>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="saveBtn" disabled>Save Changes</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="writeAccessBtn">Request Write Access</button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" id="logoutBtn">Logout</button>
@@ -176,7 +179,7 @@
         let currentUser = null;
         let hasWriteAccess = false;
         let writeAccessTimer = null;
-        let inactivityTimer = null;
+        let isAddingSale = false;  // Track if user is adding a sale
         const addSaleModal = new bootstrap.Modal(document.getElementById('addSaleModal'));
         
         // Check authentication on page load
@@ -190,7 +193,12 @@
                     return;
                 }
                 
-                currentUser = data.username;
+                // Store username in sessionStorage if not already there
+                if (!sessionStorage.getItem('username')) {
+                    sessionStorage.setItem('username', data.username);
+                }
+                
+                currentUser = sessionStorage.getItem('username');
                 loadData();
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -199,11 +207,38 @@
         }
 
         // Initialize Socket.IO connection
-        const socket = io();
+        const socket = io({
+            transports: ['websocket', 'polling'],  // Allow both WebSocket and polling
+            reconnection: true,                    // Enable reconnection
+            reconnectionAttempts: 5,               // Number of reconnection attempts
+            reconnectionDelay: 1000,               // Delay between reconnection attempts
+            timeout: 20000,                        // Connection timeout
+            path: '/socket.io',                    // Explicitly set the path
+            forceNew: true                         // Force new connection
+        });
 
         // Socket.IO event handlers
         socket.on('connect', () => {
             console.log('Connected to server');
+            loadData();
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            showError('Connection error. Please refresh the page or check if the server is running.');
+        });
+
+        socket.on('disconnect', (reason) => {
+            console.log('Disconnected from server:', reason);
+            if (reason === 'io server disconnect') {
+                // Server initiated disconnect, try to reconnect
+                socket.connect();
+            }
+        });
+
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            showError('Connection error. Please refresh the page.');
         });
 
         socket.on('data_updated', (data) => {
@@ -223,11 +258,22 @@
                         `<option value="${cat[0]}">${cat[0]}</option>`
                     ).join('');
 
+                    // Add default option at the top
+                    categorySelect.innerHTML = '<option value="" selected disabled>Select a category</option>' + categorySelect.innerHTML;
+
                     // Update sales table
                     const tableBody = document.getElementById('salesTableBody');
-                    tableBody.innerHTML = data.sales_data.map(sale => `
+                    tableBody.innerHTML = data.sales_data.map(sale => {
+                        // Format date from YYYY-MM-DD format
+                        const dateStr = sale[0];
+                        if (!dateStr) return '<tr><td>Invalid Date</td></tr>';
+                        
+                        const [year, month, day] = dateStr.split('-');
+                        const formattedDate = `${month}/${day}/${year}`;
+                        
+                        return `
                         <tr>
-                            <td>${sale[0]}</td>
+                            <td>${formattedDate}</td>
                             <td>${sale[1]}</td>
                             <td>${sale[2]}</td>
                             <td>${sale[3]}</td>
@@ -237,7 +283,8 @@
                             <td>${sale[7]}</td>
                             <td>${sale[8]}</td>
                         </tr>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
                     showError(data.error || 'Failed to load data');
                 }
@@ -247,19 +294,34 @@
             }
         }
 
+        // Update write access status
+        function updateWriteAccessStatus(hasAccess) {
+            const statusBadge = document.getElementById('writeAccessStatus');
+            if (hasAccess) {
+                statusBadge.style.display = 'inline-block';
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('addSaleBtn').disabled = false;
+            } else {
+                statusBadge.style.display = 'none';
+                document.getElementById('saveBtn').disabled = true;
+                document.getElementById('addSaleBtn').disabled = true;
+            }
+        }
+
         // Request write access
-        document.getElementById('writeAccessBtn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/request_write_access', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                if (response.ok) {
+        document.getElementById('writeAccessBtn').addEventListener('click', () => {
+            const username = sessionStorage.getItem('username');
+            if (!username) {
+                showError('Not logged in');
+                window.location.replace('/');
+                return;
+            }
+
+            socket.emit('request_write_access', { username }, (response) => {
+                if (response.success) {
                     hasWriteAccess = true;
-                    document.getElementById('saveBtn').disabled = false;
-                    document.getElementById('addSaleBtn').disabled = false;
-                    showSuccess('Write access granted');
+                    updateWriteAccessStatus(true);
+                    showSuccess(response.message);
                     
                     // Set timer to release write access after 10 seconds of inactivity
                     if (writeAccessTimer) {
@@ -267,31 +329,29 @@
                     }
                     writeAccessTimer = setTimeout(releaseWriteAccess, 10000);
                 } else {
-                    showError(data.error || 'Failed to get write access');
+                    showError(response.message);
                 }
-            } catch (error) {
-                console.error('Error requesting write access:', error);
-                showError('Failed to request write access');
-            }
+            });
         });
 
         // Release write access
-        async function releaseWriteAccess() {
-            try {
-                const response = await fetch('/release_write_access', {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                
-                if (response.ok) {
-                    hasWriteAccess = false;
-                    document.getElementById('saveBtn').disabled = true;
-                    document.getElementById('addSaleBtn').disabled = true;
-                    showSuccess('Write access released');
-                }
-            } catch (error) {
-                console.error('Error releasing write access:', error);
+        function releaseWriteAccess() {
+            const username = sessionStorage.getItem('username');
+            if (!username) {
+                showError('Not logged in');
+                window.location.replace('/');
+                return;
             }
+
+            socket.emit('release_write_access', { username }, (response) => {
+                if (response.success) {
+                    hasWriteAccess = false;
+                    updateWriteAccessStatus(false);
+                    showSuccess(response.message);
+                } else {
+                    showError(response.message);
+                }
+            });
         }
 
         // Add sale button click handler
@@ -300,19 +360,30 @@
                 showError('You need write access to add a sale');
                 return;
             }
+            isAddingSale = true;  // Set flag when adding sale
+            if (writeAccessTimer) {
+                clearTimeout(writeAccessTimer);  // Clear any existing timer
+            }
             addSaleModal.show();
         });
 
         // Save sale button click handler
         document.getElementById('saveSaleBtn').addEventListener('click', async () => {
+            if (!hasWriteAccess) {
+                showError('You need write access to add a sale');
+                return;
+            }
+
             const form = document.getElementById('addSaleForm');
             if (!form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
 
+            // Get the date input value and use it directly without timezone conversion
+            const dateInput = document.getElementById('date').value;
             const saleData = {
-                date: document.getElementById('date').value,
+                date: dateInput,  // Use the date directly from the input
                 invoice_number: document.getElementById('invoiceNumber').value,
                 customer_name: document.getElementById('customerName').value,
                 location: document.getElementById('location').value,
@@ -338,6 +409,12 @@
                     form.reset();
                     showSuccess('Sale added successfully');
                     loadData();
+                    isAddingSale = false;  // Reset flag after successful save
+                    // Set new timer after sale is added
+                    if (writeAccessTimer) {
+                        clearTimeout(writeAccessTimer);
+                    }
+                    writeAccessTimer = setTimeout(releaseWriteAccess, 10000);
                 } else {
                     showError(data.error || 'Failed to add sale');
                 }
@@ -347,21 +424,35 @@
             }
         });
 
-        // Logout button click handler
+        // Handle modal close
+        document.getElementById('addSaleModal').addEventListener('hidden.bs.modal', () => {
+            isAddingSale = false;  // Reset flag when modal is closed
+            // Set new timer after modal is closed
+            if (hasWriteAccess) {
+                if (writeAccessTimer) {
+                    clearTimeout(writeAccessTimer);
+                }
+                writeAccessTimer = setTimeout(releaseWriteAccess, 10000);
+            }
+        });
+
+        // Handle logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             try {
-                const response = await fetch('/logout', {
-                    method: 'POST'
-                });
-                
-                if (response.ok) {
-                    window.location.replace('/');
-                } else {
-                    showError('Failed to logout');
+                // Release write access if user has it
+                if (hasWriteAccess) {
+                    socket.emit('release_write_access', { username: currentUser }, (response) => {
+                        if (!response.success) {
+                            console.error('Failed to release write access:', response.message);
+                        }
+                    });
                 }
+
+                // Clear session and redirect to login page
+                sessionStorage.removeItem('username');
+                window.location.href = '/';
             } catch (error) {
-                console.error('Error logging out:', error);
-                showError('Failed to logout');
+                console.error('Error during logout:', error);
             }
         });
 

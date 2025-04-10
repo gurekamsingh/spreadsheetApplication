@@ -92,12 +92,14 @@
                 const data = await response.json();
                 
                 if (response.ok) {
+                    sessionStorage.setItem('username', username);
                     window.location.replace('/spreadsheet.html');
                 } else {
-                    showError(data.error || 'Login failed. Please try again.');
+                    showError(data.error || 'Login failed');
                 }
             } catch (error) {
-                showError('An error occurred. Please try again.');
+                console.error('Login error:', error);
+                showError('Login failed');
             }
         });
 
