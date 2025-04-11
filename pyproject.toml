@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "spreadsheet-application"
 version = "1.0.0"
@@ -14,4 +18,43 @@ python-dotenv = "^1.0.0"
 werkzeug = "^3.0.0"
 
 [tool.uv]
-pip = "^24.0.0" 
+pip = "^24.0.0"
+
+[tool.ruff]
+# Line length configuration
+line-length = 88
+
+# Enable autofix behavior
+fix = true
+
+# Exclude files and directories
+exclude = [
+    ".git",
+    ".ruff_cache",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist"
+]
+
+[tool.ruff.lint]
+# Enable specific rules
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+]
+
+# Ignore specific rules
+ignore = ["E501"]  # line too long
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-single-line = false
+known-first-party = ["spreadsheet_application"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports 

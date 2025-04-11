@@ -1,14 +1,14 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="sales-tracker",
     version="0.1",
     packages=find_packages(),
     install_requires=[
-        'flask',
-        'duckdb',
-        'redis',
-        'werkzeug',
+        "flask",
+        "duckdb",
+        "redis",
+        "werkzeug",
     ],
-    python_requires='>=3.7',
-) 
+    python_requires=">=3.7",
+)

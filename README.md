@@ -106,12 +106,29 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 uv pip install -e .
 ```
 
-4. Start Redis server:
+## Development
+
+### Code Quality
+
+This project uses Ruff for linting and code formatting. To run the linter:
+
 ```bash
-# On Windows (if using WSL or Windows Subsystem for Linux)
-redis-server
-# On Unix or MacOS
-redis-server
+# Check for linting issues
+ruff check .
+
+# Automatically fix linting issues
+ruff check --fix .
+
+# Format code
+ruff format .
+```
+
+### Pre-commit Hooks
+
+To ensure code quality before each commit, install pre-commit hooks:
+
+```bash
+pre-commit install
 ```
 
 ## Project Structure

@@ -1,8 +1,11 @@
 """Authentication utility functions."""
+
 import hashlib
 import secrets
 from functools import wraps
-from flask import session, jsonify
+
+from flask import jsonify, session
+
 
 def hash_password(password, salt=None):
     """Hash password with salt."""
@@ -12,11 +15,14 @@ def hash_password(password, salt=None):
     hash_obj.update((password + salt).encode())
     return hash_obj.hexdigest(), salt
 
+
 def login_required(f):
     """Decorator to require login for routes."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            return jsonify({'error': 'Please login first'}), 401
+        if "username" not in session:
+            return jsonify({"error": "Please login first"}), 401
         return f(*args, **kwargs)
-    return decorated_function 
+
+    return decorated_function
