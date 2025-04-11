@@ -1,0 +1,17 @@
+[project]
+name = "spreadsheet-application"
+version = "1.0.0"
+description = "A real-time collaborative spreadsheet application for sales data management"
+requires-python = ">=3.8"
+
+[project.dependencies]
+flask = "^3.0.0"
+flask-socketio = "^5.3.0"
+python-socketio = "^5.11.1"
+duckdb = "^0.10.0"
+redis = "^5.0.0"
+python-dotenv = "^1.0.0"
+werkzeug = "^3.0.0"
+
+[tool.uv]
+pip = "^24.0.0" 

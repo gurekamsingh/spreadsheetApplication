@@ -91,22 +91,19 @@ spreadsheetApplication/
 
 1. Clone the repository:
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/yourusername/spreadsheetApplication.git
 cd spreadsheetApplication
 ```
 
-2. Create and activate a virtual environment (recommended):
+2. Create and activate a virtual environment:
 ```bash
 python -m venv venv
-# On Windows
-venv\Scripts\activate
-# On Unix or MacOS
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install the required packages:
+3. Install dependencies using uv:
 ```bash
-pip install -r requirements.txt
+uv pip install -e .
 ```
 
 4. Start Redis server:
