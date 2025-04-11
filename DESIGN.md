@@ -1,353 +1,239 @@
-# Technical Design Document
+# Spreadsheet Application Design Document
 
-## Architecture Overview
+## System Architecture
 
-The Spreadsheet Application follows a modern client-server architecture with clear separation of concerns and modular design. The system is built using a stack of proven technologies that work together to provide a robust, scalable, and maintainable solution.
+### Components
+1. Frontend (HTML, CSS, JavaScript)
+   - User interface
+   - Real-time updates via Socket.IO
+   - Write access management UI
+   - Visual status indicators
 
-### System Architecture Diagram
+2. Backend (Python, Flask)
+   - REST API endpoints
+   - Socket.IO server
+   - Database operations
+   - Authentication
+   - Write access queue management
 
+3. Database (DuckDB)
+   - User data
+   - Sales records
+   - Categories
+
+4. Session Management (Redis)
+   - Write access queue
+   - User sessions
+   - Lock management
+
+### Sequence Diagrams
+
+#### Write Access Request Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Redis
+    participant DuckDB
+
+    User->>Frontend: Click "Request Write Access"
+    Frontend->>Backend: Socket.IO: request_write_access
+    Backend->>Redis: Check current lock
+    alt Lock Available
+        Redis->>Backend: Grant lock
+        Backend->>DuckDB: Update user status
+        Backend->>Frontend: Socket.IO: access_granted
+        Frontend->>User: Show write access badge
+    else Lock Not Available
+        Redis->>Backend: Add to queue
+        Backend->>Frontend: Socket.IO: added_to_queue
+        Frontend->>User: Show queue position
+    end
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│  Client Layer   │     │  Server Layer   │     │  Data Layer     │
-│  (Browser)      │     │  (Flask)        │     │  (DuckDB)       │
-│                 │     │                 │     │                 │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         │                       │                       │
-         │                       │                       │
-┌────────▼────────┐     ┌────────▼────────┐     ┌────────▼────────┐
-│                 │     │                 │     │                 │
-│  Socket.IO      │     │  Redis Cache    │     │  File System    │
-│  (WebSocket)    │     │  (Real-time)    │     │  (Storage)      │
-│                 │     │                 │     │                 │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
+
+#### Sales Data Update Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Redis
+    participant DuckDB
+
+    User->>Frontend: Enter sale data
+    Frontend->>Backend: Socket.IO: update_sale
+    Backend->>Redis: Verify write access
+    Redis->>Backend: Confirm access
+    Backend->>DuckDB: Save sale data
+    DuckDB->>Backend: Confirm save
+    Backend->>Frontend: Socket.IO: update_success
+    Backend->>Frontend: Socket.IO: broadcast_update
+    Frontend->>User: Show success message
 ```
 
-### Component Details
+### Write Access System
 
-#### 1. Client Layer (Frontend)
-- **Technology Stack**:
-  - HTML5 for structure
-  - CSS3 with Bootstrap for responsive design
-  - JavaScript (ES6+) for client-side logic
-  - Socket.IO client for real-time communication
+#### Queue Management
+- Redis-based queue system
+- First-in-first-out (FIFO) queue
+- Automatic timeout after 10 seconds of inactivity
+- Visual status indicator in UI
 
-- **Key Features**:
-  - Responsive single-page application
-  - Real-time data updates
-  - Write access queue management
-  - Form validation and error handling
-  - Session management
+#### Access Control
+1. Request Process:
+   - User clicks "Request Write Access"
+   - System checks current lock status
+   - If available, grants access immediately
+   - If not available, adds to queue
 
-#### 2. Server Layer (Backend)
-- **Core Framework**:
-  - Flask web framework
-  - Blueprint-based route organization
-  - RESTful API design
-  - Session-based authentication
+2. Release Process:
+   - Automatic after 10 seconds of inactivity
+   - Manual release on logout
+   - Next user in queue receives access
+   - Broadcasts update to all clients
 
-- **Key Components**:
-  - Authentication Blueprint (`auth_bp`)
-  - Spreadsheet Blueprint (`spreadsheet_bp`)
-  - Socket.IO integration
-  - Request validation middleware
-  - Error handling middleware
+3. UI Indicators:
+   - Green badge shows when user has write access
+   - Disabled buttons when no write access
+   - Success/error messages for access changes
 
-#### 3. Real-time Layer
-- **Redis Implementation**:
-  - Write access management
-  - User session tracking
-  - Queue system
-  - Real-time data synchronization
+## User Interface
 
-- **Socket.IO Features**:
-  - Bi-directional communication
-  - Event-based updates
-  - Automatic reconnection
-  - Room-based broadcasting
+### Layout
+1. Header
+   - Application title
+   - Write access status badge
+   - Action buttons (Save, Request Access, Logout)
 
-#### 4. Data Layer
-- **DuckDB Implementation**:
-  - SQL-based data operations
-  - Transaction support
-  - Foreign key constraints
-  - Index optimization
+2. Main Content
+   - Sales data table
+   - Add sale modal
+   - Success/error alerts
 
-- **Data Management**:
-  - Connection pooling
-  - Query optimization
-  - Transaction isolation
-  - Data integrity checks
+### Features
+1. Authentication
+   - Login form
+   - Signup form
+   - Session management
 
-### Data Flow
+2. Data Management
+   - View sales data
+   - Add new sales
+   - Category selection
+   - Date formatting
 
-1. **User Authentication Flow**:
-   ```
-   Client -> Flask Server -> DuckDB -> Session Management
-   ```
+3. Real-time Updates
+   - Automatic data refresh
+   - Write access status updates
+   - Queue position updates
 
-2. **Data Read Flow**:
-   ```
-   Client -> Flask Server -> DuckDB -> Response
-   ```
+## Database Schema
 
-3. **Data Write Flow**:
-   ```
-   Client -> Redis (Write Access Check) -> Flask Server -> DuckDB -> Socket.IO Broadcast
+### Tables
+1. Users
+   ```sql
+   CREATE TABLE users (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       username TEXT UNIQUE NOT NULL,
+       password_hash TEXT NOT NULL
+   );
    ```
 
-4. **Real-time Update Flow**:
-   ```
-   Server -> Socket.IO -> All Connected Clients
+2. Sales
+   ```sql
+   CREATE TABLE sales (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       date DATE NOT NULL,
+       invoice_number TEXT NOT NULL,
+       customer_name TEXT NOT NULL,
+       location TEXT NOT NULL,
+       product_name TEXT NOT NULL,
+       category TEXT NOT NULL,
+       volume_sold REAL NOT NULL,
+       unit TEXT NOT NULL,
+       created_by TEXT NOT NULL
+   );
    ```
 
-### Security Architecture
+3. Categories
+   ```sql
+   CREATE TABLE categories (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       name TEXT NOT NULL UNIQUE,
+       description TEXT
+   );
+   ```
 
-1. **Authentication Layer**:
-   - Session-based authentication
-   - Password hashing with salt
+## Security Measures
+
+1. Authentication
+   - Password hashing
+   - Session management
    - CSRF protection
-   - Secure cookie handling
 
-2. **Authorization Layer**:
+2. Data Access
    - Write access control
-   - Resource-based permissions
-   - Session validation
-   - Request validation
-
-3. **Data Security**:
+   - Input validation
    - SQL injection prevention
-   - XSS protection
-   - Input sanitization
-   - Output encoding
 
-### Scalability Considerations
-
-1. **Horizontal Scaling**:
-   - Stateless server design
-   - Redis for session management
-   - Load balancer ready
-   - Database connection pooling
-
-2. **Vertical Scaling**:
-   - Query optimization
-   - Caching strategies
-   - Resource monitoring
-   - Performance tuning
-
-3. **High Availability**:
-   - Redis cluster support
-   - Database replication
-   - Failover mechanisms
-   - Backup strategies
-
-### Deployment Architecture
-
-1. **Development Environment**:
-   - Local development setup
-   - Debug mode enabled
-   - Detailed logging
-   - Hot reloading
-
-2. **Production Environment**:
-   - Production-grade server
-   - SSL/TLS encryption
-   - Rate limiting
-   - Monitoring and alerting
-
-3. **Container Support**:
-   - Docker compatibility
-   - Environment isolation
-   - Resource management
-   - Easy deployment
-
-## Database Design
-
-### Users Table
-```sql
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    username VARCHAR UNIQUE NOT NULL,
-    password_hash VARCHAR NOT NULL,
-    email VARCHAR UNIQUE NOT NULL,
-    name VARCHAR NOT NULL
-)
-```
-
-### Categories Table
-```sql
-CREATE TABLE categories (
-    id INTEGER PRIMARY KEY,
-    name VARCHAR UNIQUE NOT NULL,
-    description VARCHAR
-)
-```
-
-### Sales Table
-```sql
-CREATE TABLE sales (
-    id INTEGER PRIMARY KEY,
-    date DATE NOT NULL,
-    invoice_number VARCHAR NOT NULL,
-    customer_name VARCHAR NOT NULL,
-    location VARCHAR NOT NULL,
-    product_name VARCHAR NOT NULL,
-    category VARCHAR NOT NULL,
-    volume_sold DECIMAL(10,2) NOT NULL,
-    unit VARCHAR NOT NULL,
-    created_by VARCHAR NOT NULL,
-    FOREIGN KEY (category) REFERENCES categories(name)
-)
-```
-
-## Write Access System Design
-
-### Redis Keys
-- `write_lock`: Stores the username of the user with current write access
-- `write_queue`: List of usernames waiting for write access
-- `active_users`: Set of currently active users
-
-### Write Access Flow
-1. User requests write access
-2. System checks if any user has write access
-3. If no user has access:
-   - Grant access to requesting user
-   - Set 10-second expiration on lock
-4. If another user has access:
-   - Add requesting user to queue
-   - Return queue position
-
-### Lock Expiration
-- Write access locks expire after 10 seconds of inactivity
-- Users must request access again after expiration
-- Queue position is maintained until access is granted
-
-## Real-time Updates
-
-### Socket.IO Events
-- `data_updated`: Broadcasted when data changes
-- `write_access_granted`: Notifies user of write access
-- `write_access_released`: Notifies users when write access is released
-
-### Update Flow
-1. User makes changes
-2. Server updates database
-3. Server broadcasts update via Socket.IO
-4. All connected clients receive update
-
-## Security Design
-
-### Authentication
-- Session-based authentication
-- Password hashing using Werkzeug's security functions
-- Session timeout after 30 minutes of inactivity
-
-### Data Validation
-- Input validation on both client and server
-- SQL injection prevention through parameterized queries
-- XSS prevention through proper escaping
-
-### Write Access Security
-- Server-side validation of write access
-- Redis-based locking mechanism
-- Automatic lock expiration
+3. Real-time Features
+   - Socket.IO authentication
+   - Message validation
+   - Error handling
 
 ## Error Handling
 
-### Database Errors
-- Transaction rollback on errors
-- Connection retry mechanism
-- Graceful degradation when database is unavailable
+1. Frontend
+   - User-friendly error messages
+   - Automatic retry for failed operations
+   - Connection status monitoring
 
-### Redis Errors
-- Fallback to read-only mode
-- Queue system degradation
-- User notification of service issues
-
-### Network Errors
-- Socket.IO reconnection handling
-- API request retry mechanism
-- User-friendly error messages
-
-## Performance Considerations
-
-### Database Optimization
-- Indexed columns for frequent queries
-- Efficient JOIN operations
-- Transaction management
-
-### Redis Optimization
-- Key expiration for automatic cleanup
-- Efficient queue operations
-- Minimal data storage
-
-### Frontend Optimization
-- Lazy loading of data
-- Efficient DOM updates
-- Minimal network requests
-
-## Scalability Design
-
-### Horizontal Scaling
-- Stateless server design
-- Redis for session management
-- Database connection pooling
-
-### Load Balancing
-- Multiple server instances possible
-- Redis cluster support
-- Database replication ready
-
-## Monitoring and Logging
-
-### Server Logs
-- Request/response logging
-- Error tracking
-- Performance metrics
-
-### Database Logs
-- Query performance
-- Connection issues
-- Transaction failures
-
-### Redis Logs
-- Connection status
-- Queue operations
-- Lock management
+2. Backend
+   - Input validation
+   - Database error handling
+   - Socket.IO error handling
 
 ## Future Enhancements
 
-### Planned Features
-1. User roles and permissions
-2. Data export/import
-3. Advanced filtering and search
-4. Data visualization
-5. API rate limiting
+1. Features
+   - Data export
+   - Advanced filtering
+   - User roles
+   - Data backup
+   - Visualization
 
-### Technical Improvements
-1. Database query optimization
-2. Caching layer
-3. Automated testing
-4. CI/CD pipeline
-5. Containerization support
+2. Performance
+   - Caching
+   - Pagination
+   - Optimized queries
 
-## Development Guidelines
+3. Security
+   - Rate limiting
+   - Audit logging
+   - Enhanced validation
 
-### Code Style
-- PEP 8 compliance
-- Type hints
-- Docstring documentation
-- Modular design
-
-### Testing
-- Unit tests for core functionality
-- Integration tests for API endpoints
-- End-to-end testing
-- Performance testing
-
-### Deployment
-- Environment configuration
-- Database migrations
-- Backup procedures
-- Monitoring setup 
+## Project Structure
+```
+spreadsheetApplication/
+├── backend/
+│   ├── routes/
+│   │   └── spreadsheet.py
+│   └── app.py
+├── frontend/
+│   └── spreadsheet.html
+├── database/
+│   └── sales.db
+├── kubernetes/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── configmap.yaml
+├── certs/
+│   ├── server.crt
+│   └── server.key
+├── README.md
+├── DESIGN.md
+├── requirements.txt
+├── run.py
+└── setup.py
+``` 
