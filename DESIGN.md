@@ -233,7 +233,6 @@ spreadsheetApplication/
 │   └── server.key
 ├── README.md
 ├── DESIGN.md
-├── requirements.txt
 ├── run.py
 └── setup.py
 ``` 
