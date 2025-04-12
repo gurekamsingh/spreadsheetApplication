@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spreadsheet-app
+  namespace: spreadsheet-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spreadsheet-app
+  template:
+    metadata:
+      labels:
+        app: spreadsheet-app
+    spec:
+      containers:
+      - name: spreadsheet-app
+        image: gurekam22/spreadsheet-app:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: REDIS_HOST
+          value: "redis-service"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spreadsheet-app-service
+  namespace: spreadsheet-app
+spec:
+  selector:
+    app: spreadsheet-app
+  ports:
+  - port: 80
+    targetPort: 5000
+  type: ClusterIP 

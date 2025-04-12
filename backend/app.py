@@ -80,7 +80,7 @@ if __name__ == "__main__":
     try:
         socketio.run(
             app,
-            host="127.0.0.1",  # Use localhost
+            host="0.0.0.0",  # Allow external access
             port=PORT,
             debug=DEBUG,
             allow_unsafe_werkzeug=True,
