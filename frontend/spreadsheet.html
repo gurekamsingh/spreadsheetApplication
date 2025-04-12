@@ -208,13 +208,18 @@
 
         // Initialize Socket.IO connection
         const socket = io({
-            transports: ['websocket', 'polling'],  // Allow both WebSocket and polling
-            reconnection: true,                    // Enable reconnection
-            reconnectionAttempts: 5,               // Number of reconnection attempts
-            reconnectionDelay: 1000,               // Delay between reconnection attempts
-            timeout: 20000,                        // Connection timeout
-            path: '/socket.io',                    // Explicitly set the path
-            forceNew: true                         // Force new connection
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            timeout: 20000,
+            path: '/socket.io',
+            forceNew: true,
+            upgrade: true,  // Enable WebSocket upgrade
+            rememberUpgrade: true,  // Remember WebSocket upgrade
+            autoConnect: true,  // Auto-connect on initialization
+            multiplex: false,  // Disable multiplexing
+            rejectUnauthorized: false  // Allow self-signed certificates
         });
 
         // Socket.IO event handlers
