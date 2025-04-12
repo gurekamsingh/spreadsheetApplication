@@ -186,3 +186,110 @@ This will display:
 ### Authentication
 - `POST /signup` - Register a new user
 - `POST /login`
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment. The pipeline includes:
+
+1. **Testing**
+   - Runs on Python 3.8, 3.9, and 3.10
+   - Checks code style with Ruff
+   - Runs automated tests
+   - Validates code formatting
+
+2. **Building**
+   - Creates Docker image
+   - Tags with commit SHA and latest
+   - Pushes to Docker Hub
+
+3. **Deployment**
+   - Deploys to Kubernetes cluster
+   - Updates deployment with new image
+   - Applies Kubernetes configurations
+
+### Required Secrets
+
+The following secrets need to be configured in your GitHub repository:
+
+- `DOCKERHUB_USERNAME`: Your Docker Hub username
+- `DOCKERHUB_TOKEN`: Your Docker Hub access token
+- `KUBE_CONFIG`: Your Kubernetes configuration file
+
+## Local Development with Minikube
+
+### Prerequisites
+- Docker
+- Minikube
+- kubectl
+
+### Setting up Minikube
+
+1. Install Minikube:
+   - Windows: `choco install minikube`
+   - macOS: `brew install minikube`
+   - Linux: Follow instructions at [minikube.sigs.k8s.io](https://minikube.sigs.k8s.io/docs/start/)
+
+2. Start Minikube:
+```bash
+minikube start --driver=docker --cpus=2 --memory=4g --disk-size=20g
+```
+
+3. Enable required addons:
+```bash
+minikube addons enable ingress
+minikube addons enable metrics-server
+```
+
+4. Create namespace:
+```bash
+kubectl create namespace spreadsheet-app
+```
+
+### Local Development Workflow
+
+1. Build and push Docker image:
+```bash
+# Build the image
+docker build -t spreadsheet-app:latest .
+
+# Load the image into Minikube
+minikube image load spreadsheet-app:latest
+```
+
+2. Deploy to Minikube:
+```bash
+# Apply Kubernetes configurations
+kubectl apply -f kubernetes/ -n spreadsheet-app
+
+# Watch the deployment
+kubectl get pods -n spreadsheet-app -w
+```
+
+3. Access the application:
+```bash
+# Get the service URL
+minikube service spreadsheet-app -n spreadsheet-app --url
+```
+
+### Development Tips
+
+1. To view logs:
+```bash
+kubectl logs -f deployment/spreadsheet-app -n spreadsheet-app
+```
+
+2. To delete and redeploy:
+```bash
+kubectl delete -f kubernetes/ -n spreadsheet-app
+kubectl apply -f kubernetes/ -n spreadsheet-app
+```
+
+3. To stop Minikube:
+```bash
+minikube stop
+```
+
+4. To delete Minikube cluster:
+```bash
+minikube delete
+```
