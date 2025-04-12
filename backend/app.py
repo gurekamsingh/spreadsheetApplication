@@ -28,10 +28,14 @@ def create_app():
         app,
         cors_allowed_origins="*",
         async_mode="threading",
-        ping_timeout=60,
-        ping_interval=25,
+        ping_timeout=20,  # Match frontend timeout
+        ping_interval=10,  # More frequent pings
         logger=True,
         engineio_logger=True,
+        allow_upgrades=True,  # Allow WebSocket upgrades
+        transports=["websocket", "polling"],  # Match frontend transports
+        max_http_buffer_size=1e8,  # Increase buffer size
+        async_handlers=True,  # Enable async handlers
     )
 
     # Register blueprints
