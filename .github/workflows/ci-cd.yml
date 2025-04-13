@@ -42,25 +42,10 @@ jobs:
       run: |
         uv venv .venv
         source .venv/bin/activate
-        # Install build dependencies
         uv pip install hatch
-        # Install the package in development mode
         uv pip install -e .
-        # Install development dependencies
         uv pip install ".[dev]"
-        # Verify package installation and paths
-        python -c "
-import sys, os
-print(f'Python path: {sys.path}')
-print(f'Current directory: {os.getcwd()}')
-print(f'Directory contents: {os.listdir()}')
-print(f'Frontend directory exists: {os.path.exists(\"frontend\")}')
-print(f'Frontend contents: {os.listdir(\"frontend\")}')
-import backend
-print(f'Backend package path: {backend.__file__}')
-import backend.database
-print(f'Database module path: {backend.database.__file__}')
-"
+        python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Frontend directory exists: {os.path.exists(\"frontend\")}'); print(f'Frontend contents: {os.listdir(\"frontend\")}')"
 
     - name: Validate static files
       run: |
@@ -114,9 +99,7 @@ print(f'Database module path: {backend.database.__file__}')
       run: |
         uv venv .venv
         source .venv/bin/activate
-        # Install the package and its dependencies
         uv pip install -e .
-        # Install development dependencies
         uv pip install ruff pytest
 
     - name: Build Docker image
@@ -160,17 +143,8 @@ print(f'Database module path: {backend.database.__file__}')
 
     - name: Deploy to Minikube
       run: |
-        # Create namespace if it doesn't exist
         minikube kubectl -- create namespace spreadsheet-app --dry-run=client -o yaml | minikube kubectl -- apply -f -
-        
-        # Deploy application
         minikube kubectl -- apply -f kubernetes/ -n spreadsheet-app
-        
-        # Update deployment with new image
         minikube kubectl -- set image deployment/spreadsheet-app spreadsheet-app=${{ secrets.DOCKERHUB_USERNAME }}/spreadsheet-app:${{ github.sha }} -n spreadsheet-app
-        
-        # Wait for deployment to be ready
         minikube kubectl -- rollout status deployment/spreadsheet-app -n spreadsheet-app
-        
-        # Get the service URL
         minikube service spreadsheet-app -n spreadsheet-app --url 
