@@ -26,6 +26,18 @@ jobs:
         curl -LsSf https://astral.sh/uv/install.sh | sh
         export PATH="$HOME/.cargo/bin:$PATH"
 
+    - name: Debug workspace structure
+      run: |
+        echo "Current directory: $(pwd)"
+        echo "Listing workspace root:"
+        ls -la
+        echo "Listing frontend directory:"
+        ls -la frontend/
+        echo "Listing backend directory:"
+        ls -la backend/
+        echo "Checking file permissions:"
+        stat frontend/index.html frontend/spreadsheet.html frontend/signup.html
+
     - name: Create virtual environment and install dependencies
       run: |
         uv venv .venv
@@ -36,10 +48,31 @@ jobs:
         uv pip install -e .
         # Install development dependencies
         uv pip install ".[dev]"
-        # Verify package installation
-        python -c "import sys; print(f'Python path: {sys.path}')"
-        python -c "import backend; print(f'Backend package path: {backend.__file__}')"
-        python -c "import backend.database; print(f'Database module path: {backend.database.__file__}')"
+        # Verify package installation and paths
+        python -c "
+import sys, os
+print(f'Python path: {sys.path}')
+print(f'Current directory: {os.getcwd()}')
+print(f'Directory contents: {os.listdir()}')
+print(f'Frontend directory exists: {os.path.exists(\"frontend\")}')
+print(f'Frontend contents: {os.listdir(\"frontend\")}')
+import backend
+print(f'Backend package path: {backend.__file__}')
+import backend.database
+print(f'Database module path: {backend.database.__file__}')
+"
+
+    - name: Validate static files
+      run: |
+        echo "Checking static file contents:"
+        echo "index.html:"
+        cat frontend/index.html || echo "Failed to read index.html"
+        echo "spreadsheet.html:"
+        cat frontend/spreadsheet.html || echo "Failed to read spreadsheet.html"
+        echo "signup.html:"
+        cat frontend/signup.html || echo "Failed to read signup.html"
+        echo "Checking file encodings:"
+        file frontend/*.html
 
     - name: Run linting
       run: |
@@ -47,11 +80,14 @@ jobs:
         python -m ruff check . --config pyproject.toml
         python -m ruff format . --config pyproject.toml
 
-    - name: Run tests
+    - name: Run tests with debug output
       run: |
         source .venv/bin/activate
         if [ -d "tests" ]; then
-          PYTHONPATH=$PWD python -m pytest tests/ -v
+          echo "Test directory contents:"
+          ls -la tests/
+          echo "Running tests with verbose output and debug logging:"
+          PYTHONPATH=$PWD PYTHONVERBOSE=1 python -m pytest tests/ -v --capture=no
         else
           echo "No tests directory found, skipping tests"
         fi
