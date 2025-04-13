@@ -35,8 +35,8 @@ jobs:
         ls -la frontend/
         echo "Listing backend directory:"
         ls -la backend/
-        echo "Checking file permissions:"
-        stat frontend/index.html frontend/spreadsheet.html frontend/signup.html
+        echo "Listing backend/database directory:"
+        ls -la backend/database/
 
     - name: Create virtual environment and install dependencies
       run: |
@@ -44,19 +44,7 @@ jobs:
         source .venv/bin/activate
         uv pip install hatch
         uv pip install -e ".[dev]"
-        python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Frontend directory exists: {os.path.exists(\"frontend\")}'); print(f'Frontend contents: {os.listdir(\"frontend\")}')"
-
-    - name: Validate static files
-      run: |
-        echo "Checking static file contents:"
-        echo "index.html:"
-        cat frontend/index.html || echo "Failed to read index.html"
-        echo "spreadsheet.html:"
-        cat frontend/spreadsheet.html || echo "Failed to read spreadsheet.html"
-        echo "signup.html:"
-        cat frontend/signup.html || echo "Failed to read signup.html"
-        echo "Checking file encodings:"
-        file frontend/*.html
+        python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Backend directory exists: {os.path.exists(\"backend\")}'); print(f'Backend contents: {os.listdir(\"backend\")}'); print(f'Database directory exists: {os.path.exists(\"backend/database\")}'); print(f'Database contents: {os.listdir(\"backend/database\")}')"
 
     - name: Run linting
       run: |
@@ -71,7 +59,7 @@ jobs:
           echo "Test directory contents:"
           ls -la tests/
           echo "Running tests with verbose output and debug logging:"
-          PYTHONPATH=$PWD python -m pytest tests/ -v --capture=no
+          PYTHONPATH=$PWD:$PWD/backend python -m pytest tests/ -v --capture=no
         else
           echo "No tests directory found, skipping tests"
         fi
