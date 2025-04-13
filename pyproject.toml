@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [tool.uv]
-pip = { python = "3.11" }
+pip = { python = ">=3.8" }
 
 [tool.ruff]
 # Line length configuration
