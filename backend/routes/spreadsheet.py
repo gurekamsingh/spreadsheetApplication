@@ -5,10 +5,7 @@ from flask import Blueprint, jsonify, request, session
 from backend.extensions import socketio
 from backend.utils.auth import login_required
 from database.db import get_db
-from database.redis_client import (
-    get_queue_status,
-    get_redis,
-)
+from database.redis_client import get_queue_status, get_redis
 
 spreadsheet_bp = Blueprint("spreadsheet", __name__)
 
