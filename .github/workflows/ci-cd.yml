@@ -30,10 +30,12 @@ jobs:
       run: |
         uv venv .venv
         source .venv/bin/activate
-        # Install the package and its dependencies
+        # Install the package in development mode
         uv pip install -e .
         # Install development dependencies
-        uv pip install ruff pytest
+        uv pip install ".[dev]"
+        # Verify package installation
+        python -c "import backend; print(f'Backend package path: {backend.__file__}')"
 
     - name: Run linting
       run: |
@@ -45,7 +47,7 @@ jobs:
       run: |
         source .venv/bin/activate
         if [ -d "tests" ]; then
-          python -m pytest tests/ -v
+          PYTHONPATH=$PWD python -m pytest tests/ -v
         else
           echo "No tests directory found, skipping tests"
         fi
