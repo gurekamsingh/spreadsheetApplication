@@ -1,1 +1,1 @@
-"""Configuration package initialization.""" 
+"""Configuration package initialization."""
