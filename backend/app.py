@@ -33,7 +33,7 @@ def create_app():
         logger=True,
         engineio_logger=True,
         allow_upgrades=True,  # Allow WebSocket upgrades
-        transports=["websocket", "polling"],  # Match frontend transports
+        transports=["websocket", "polling"],  # Match
         max_http_buffer_size=1e8,  # Increase buffer size
         async_handlers=True,  # Enable async handlers
     )
