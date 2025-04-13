@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 setup(
     name="spreadsheet-application",
     version="1.0.0",
-    packages=find_packages(),
+    packages=[*find_packages(), "database"],
     include_package_data=True,
     package_data={
         "": ["*.db", "*.sql", "*.py"],
