@@ -30,7 +30,7 @@ jobs:
       run: |
         uv venv .venv
         source .venv/bin/activate
-        uv pip install -e .
+        pip install -e .
         uv pip install ruff pytest
 
     - name: Run linting
@@ -70,7 +70,7 @@ jobs:
       run: |
         uv venv .venv
         source .venv/bin/activate
-        uv pip install -e .
+        pip install -e .
         uv pip install ruff pytest
 
     - name: Build Docker image
