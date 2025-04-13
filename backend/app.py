@@ -60,9 +60,8 @@ def create_app():
 
     print(f"Static folder path: {STATIC_FOLDER}")
     print(f"Static folder exists: {os.path.exists(STATIC_FOLDER)}")
-    print(
-        f"Index.html exists: {os.path.exists(os.path.join(STATIC_FOLDER, 'index.html'))}"
-    )
+    index_html_path = os.path.join(STATIC_FOLDER, "index.html")
+    print(f"Index.html exists: {os.path.exists(index_html_path)}")
 
     return app
 
@@ -92,5 +91,5 @@ if __name__ == "__main__":
             use_reloader=False,
         )  # Disable reloader to prevent duplicate sockets
     except Exception as e:
-        print(f"Error starting server: {str(e)}")
+        print(f"Error starting server: {e!s}")
         print("Make sure no other application is using port 5000")

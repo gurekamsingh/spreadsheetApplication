@@ -54,10 +54,10 @@ def signup():
         db.commit()
         return jsonify({"message": "User created successfully"}), 201
     except duckdb.Error as e:
-        print(f"Database error during signup: {str(e)}")
+        print(f"Database error during signup: {e!s}")
         return jsonify({"error": "Database error occurred"}), 500
     except Exception as e:
-        print(f"Error during signup: {str(e)}")
+        print(f"Error during signup: {e!s}")
         return jsonify({"error": "An error occurred"}), 500
 
 
@@ -113,7 +113,7 @@ def login():
         return jsonify({"error": "Invalid username or password"}), 401
 
     except Exception as e:
-        print(f"Login error: {str(e)}")
+        print(f"Login error: {e!s}")
         return jsonify({"error": "An error occurred during login"}), 500
 
 

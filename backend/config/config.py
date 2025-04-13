@@ -12,7 +12,7 @@ print(f"Project root directory: {PROJECT_ROOT}")
 SECRET_KEY = os.environ.get("SECRET_KEY", "dev")
 DEBUG = os.environ.get("FLASK_DEBUG", "True").lower() == "true"
 HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
-PORT = int(os.environ.get("FLASK_PORT", 5000))
+PORT = int(os.environ.get("FLASK_PORT", "5000"))
 
 # Static files
 STATIC_FOLDER = os.path.join(PROJECT_ROOT, "frontend")
@@ -28,9 +28,9 @@ DB_PATH = os.path.join(DB_DIR, "spreadsheet.db")
 
 # Redis settings
 REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
-REDIS_DB = int(os.environ.get("REDIS_DB", 0))
-REDIS_TIMEOUT = int(os.environ.get("REDIS_TIMEOUT", 5))
+REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
+REDIS_TIMEOUT = int(os.environ.get("REDIS_TIMEOUT", "5"))
 
 # Redis Keys
 LOCK_KEY = "spreadsheet_lock"

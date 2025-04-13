@@ -36,7 +36,7 @@ def broadcast_update():
                     "queue_update", {"position": position}, room=client.get("sid")
                 )
     except Exception as e:
-        print(f"Error broadcasting update: {str(e)}")
+        print(f"Error broadcasting update: {e!s}")
 
 
 @spreadsheet_bp.route("/read_data")
@@ -74,7 +74,7 @@ def read_data_with_queue():
             }
         )
     except Exception as e:
-        print(f"Error reading data: {str(e)}")
+        print(f"Error reading data: {e!s}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -141,7 +141,7 @@ def write_data():
         return jsonify({"message": "Data written successfully"})
 
     except Exception as e:
-        print(f"Error writing data: {str(e)}")
+        print(f"Error writing data: {e!s}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -172,7 +172,10 @@ def handle_write_access_request(data):
             queue_position = redis_client.llen("write_queue")
             return {
                 "success": False,
-                "message": f"Write access is currently held by another user. You are #{queue_position} in queue",
+                "message": (
+                    f"Write access is currently held by another user. "
+                    f"You are #{queue_position} in queue"
+                ),
             }
 
         # No one has write access, grant it to this user
@@ -180,7 +183,7 @@ def handle_write_access_request(data):
         redis_client.expire("write_lock", 60)  # 60 seconds timeout
         return {"success": True, "message": "Write access granted"}
     except Exception as e:
-        print(f"Error handling write access request: {str(e)}")
+        print(f"Error handling write access request: {e!s}")
         return {"success": False, "message": str(e)}
 
 
@@ -221,7 +224,7 @@ def handle_write_access_release(data):
         broadcast_update()
         return {"success": True, "message": "Write access released"}
     except Exception as e:
-        print(f"Error handling write access release: {str(e)}")
+        print(f"Error handling write access release: {e!s}")
         return {"success": False, "message": str(e)}
 
 
@@ -232,8 +235,15 @@ def read_data():
 
         # Get all sales data
         cursor = db.execute("""
-            SELECT strftime('%Y-%m-%d', date) as date, invoice_number, customer_name, location, 
-                   product_name, category, volume_sold, unit, created_by
+            SELECT strftime('%Y-%m-%d', date) as date, 
+                   invoice_number, 
+                   customer_name, 
+                   location, 
+                   product_name, 
+                   category, 
+                   volume_sold, 
+                   unit, 
+                   created_by
             FROM sales
             ORDER BY date DESC, id DESC
         """)
@@ -269,5 +279,5 @@ def read_data():
         return jsonify({"sales_data": sales_data, "categories": categories})
 
     except Exception as e:
-        print(f"Error reading data: {str(e)}")
+        print(f"Error reading data: {e!s}")
         return jsonify({"error": str(e)}), 500
