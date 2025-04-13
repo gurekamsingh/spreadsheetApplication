@@ -16,13 +16,14 @@ root_dir = str(Path(__file__).parent.parent)
 sys.path.append(root_dir)
 
 
-def create_app():
+def create_app(testing=False):
     """Create and configure the Flask application."""
     # Ensure static folder exists
     os.makedirs(STATIC_FOLDER, exist_ok=True)
 
     app = Flask(__name__, static_folder=STATIC_FOLDER, static_url_path="")
     app.secret_key = SECRET_KEY
+    app.config["TESTING"] = testing
 
     # Initialize extensions
     socketio.init_app(

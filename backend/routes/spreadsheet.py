@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, request, session
 from backend.database.db import get_db
 from backend.database.redis_client import (
     get_queue_status,
-    get_redis_client,
+    get_redis,
 )
 from backend.extensions import socketio
 from backend.utils.auth import login_required
@@ -16,7 +16,7 @@ spreadsheet_bp = Blueprint("spreadsheet", __name__)
 def broadcast_update():
     """Broadcast queue status to all clients."""
     try:
-        redis_client = get_redis_client()
+        redis_client = get_redis()
         if not redis_client:
             return
 
@@ -45,7 +45,7 @@ def read_data_with_queue():
     """Read data from the spreadsheet with queue status."""
     try:
         db = get_db()
-        redis = get_redis_client()
+        redis = get_redis()
 
         # Get sales data
         sales_data = db.execute("""
@@ -153,7 +153,7 @@ def handle_write_access_request(data):
         if not username:
             return {"success": False, "message": "Username is required"}
 
-        redis_client = get_redis_client()
+        redis_client = get_redis()
         if not redis_client:
             return {"success": False, "message": "Failed to connect to Redis"}
 
@@ -195,7 +195,7 @@ def handle_write_access_release(data):
         if not username:
             return {"success": False, "message": "Username is required"}
 
-        redis_client = get_redis_client()
+        redis_client = get_redis()
         if not redis_client:
             return {"success": False, "message": "Failed to connect to Redis"}
 
