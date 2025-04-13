@@ -1,14 +1,14 @@
 """Spreadsheet routes."""
 
-from extensions import socketio
 from flask import Blueprint, jsonify, request, session
-from utils.auth import login_required
 
-from database.db import get_db
-from database.redis_client import (
+from backend.database.db import get_db
+from backend.database.redis_client import (
     get_queue_status,
-    get_redis,
+    get_redis_client,
 )
+from backend.extensions import socketio
+from backend.utils.auth import login_required
 
 spreadsheet_bp = Blueprint("spreadsheet", __name__)
 
@@ -16,7 +16,7 @@ spreadsheet_bp = Blueprint("spreadsheet", __name__)
 def broadcast_update():
     """Broadcast queue status to all clients."""
     try:
-        redis_client = get_redis()
+        redis_client = get_redis_client()
         if not redis_client:
             return
 
@@ -45,7 +45,7 @@ def read_data_with_queue():
     """Read data from the spreadsheet with queue status."""
     try:
         db = get_db()
-        redis = get_redis()
+        redis = get_redis_client()
 
         # Get sales data
         sales_data = db.execute("""
@@ -153,7 +153,7 @@ def handle_write_access_request(data):
         if not username:
             return {"success": False, "message": "Username is required"}
 
-        redis_client = get_redis()
+        redis_client = get_redis_client()
         if not redis_client:
             return {"success": False, "message": "Failed to connect to Redis"}
 
@@ -192,7 +192,7 @@ def handle_write_access_release(data):
         if not username:
             return {"success": False, "message": "Username is required"}
 
-        redis_client = get_redis()
+        redis_client = get_redis_client()
         if not redis_client:
             return {"success": False, "message": "Failed to connect to Redis"}
 
