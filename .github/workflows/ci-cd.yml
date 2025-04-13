@@ -32,11 +32,12 @@ jobs:
         source .venv/bin/activate
         # Install build dependencies
         uv pip install hatch
-        # Build and install the package
+        # Install the package in development mode
         uv pip install -e .
         # Install development dependencies
         uv pip install ".[dev]"
         # Verify package installation
+        python -c "import sys; print(f'Python path: {sys.path}')"
         python -c "import backend; print(f'Backend package path: {backend.__file__}')"
         python -c "import backend.database; print(f'Database module path: {backend.database.__file__}')"
 
