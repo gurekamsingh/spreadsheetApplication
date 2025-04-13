@@ -31,13 +31,13 @@ jobs:
         uv venv .venv
         source .venv/bin/activate
         uv pip install -e .
-        uv pip install ruff
+        uv pip install ruff pytest
 
     - name: Run linting
       run: |
         source .venv/bin/activate
-        python -m ruff check .
-        python -m ruff format --check .
+        python -m ruff check . --config pyproject.toml
+        python -m ruff format . --config pyproject.toml
 
     - name: Run tests
       run: |
@@ -67,7 +67,7 @@ jobs:
         uv venv .venv
         source .venv/bin/activate
         uv pip install -e .
-        uv pip install ruff
+        uv pip install ruff pytest
 
     - name: Build Docker image
       run: |
