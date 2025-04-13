@@ -36,7 +36,9 @@ jobs:
         echo "Listing backend directory:"
         ls -la backend/
         echo "Listing backend/database directory:"
-        ls -la backend/database/
+        ls -la backend/database/ || echo "backend/database directory not found"
+        echo "Listing root database directory:"
+        ls -la database/ || echo "root database directory not found"
 
     - name: Create virtual environment and install dependencies
       run: |
@@ -44,7 +46,9 @@ jobs:
         source .venv/bin/activate
         uv pip install hatch
         uv pip install -e ".[dev]"
-        python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Backend directory exists: {os.path.exists(\"backend\")}'); print(f'Backend contents: {os.listdir(\"backend\")}'); print(f'Database directory exists: {os.path.exists(\"backend/database\")}'); print(f'Database contents: {os.listdir(\"backend/database\")}')"
+        # Add both project root and backend to PYTHONPATH
+        export PYTHONPATH=$PWD:$PWD/backend:$PYTHONPATH
+        python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Backend directory exists: {os.path.exists(\"backend\")}'); print(f'Backend contents: {os.listdir(\"backend\")}'); print(f'Database directory exists: {os.path.exists(\"backend/database\")}'); print(f'Database contents: {os.listdir(\"backend/database\") if os.path.exists(\"backend/database\") else \"Directory not found\"}')"
 
     - name: Run linting
       run: |
