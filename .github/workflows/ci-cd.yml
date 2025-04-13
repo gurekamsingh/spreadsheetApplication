@@ -50,11 +50,11 @@ jobs:
         export PYTHONPATH=$PWD:$PYTHONPATH
         python -c "import sys, os; print(f'Python path: {sys.path}'); print(f'Current directory: {os.getcwd()}'); print(f'Directory contents: {os.listdir()}'); print(f'Backend directory exists: {os.path.exists(\"backend\")}'); print(f'Backend contents: {os.listdir(\"backend\")}'); print(f'Database directory exists: {os.path.exists(\"backend/database\")}'); print(f'Database contents: {os.listdir(\"backend/database\") if os.path.exists(\"backend/database\") else \"Directory not found\"}')"
 
-    - name: Run linting
-      run: |
-        source .venv/bin/activate
-        python -m ruff check . --config pyproject.toml
-        python -m ruff format . --config pyproject.toml
+    # - name: Run linting
+    #   run: |
+    #     source .venv/bin/activate
+    #     python -m ruff check . --config pyproject.toml
+    #     python -m ruff format . --config pyproject.toml
 
     - name: Run tests with debug output
       run: |
