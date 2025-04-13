@@ -1,0 +1,5 @@
+[33mcommit cb57383664ba0d72b5e78fa30cd7ce1ed04e7cf0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mLAP-23[m[33m)[m
+Author: gurekam <bedi61@uwindsor.ca>
+Date:   Sun Apr 13 16:52:18 2025 -0400
+
+    LAP-23: Add setup.py and update CI/CD workflow for proper package installation

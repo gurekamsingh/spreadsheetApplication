@@ -4,8 +4,8 @@ import duckdb
 from flask import Blueprint, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from ..database.db import get_db
-from ..utils.auth import login_required
+from backend.database.db import get_db
+from backend.utils.auth import login_required
 
 auth_bp = Blueprint("auth", __name__)
 

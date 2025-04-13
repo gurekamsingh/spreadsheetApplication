@@ -7,8 +7,7 @@ from flask import Flask
 
 from .config.config import DEBUG, HOST, PORT
 from .extensions import socketio
-from .routes.auth import auth_bp
-from .routes.spreadsheet import spreadsheet_bp
+from .routes import auth_bp, spreadsheet_bp
 
 
 def create_app(testing=False):
