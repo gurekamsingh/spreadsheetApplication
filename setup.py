@@ -12,8 +12,12 @@ setup(
         "werkzeug>=2.0.0",
         "python-socketio>=5.0.0",
         "eventlet>=0.33.0",
-        "ruff>=0.3.0",
-        "pytest>=8.0.0",
     ],
+    extras_require={
+        "dev": [
+            "ruff>=0.3.0",
+            "pytest>=8.0.0",
+        ],
+    },
     python_requires=">=3.7",
 )

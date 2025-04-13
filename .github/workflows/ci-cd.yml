@@ -32,7 +32,8 @@ jobs:
         source .venv/bin/activate
         # Install the package and its dependencies
         uv pip install -e .
-        uv pip install pytest
+        # Install development dependencies
+        uv pip install ruff pytest
 
     - name: Run linting
       run: |
@@ -73,7 +74,8 @@ jobs:
         source .venv/bin/activate
         # Install the package and its dependencies
         uv pip install -e .
-        uv pip install pytest
+        # Install development dependencies
+        uv pip install ruff pytest
 
     - name: Build Docker image
       run: |
