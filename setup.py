@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "": ["*.db", "*.sql"],
+        "": ["*.db", "*.sql", "*.py"],
     },
     install_requires=[
         "flask>=3.0.0",

@@ -56,17 +56,10 @@ jobs:
     #     python -m ruff check . --config pyproject.toml
     #     python -m ruff format . --config pyproject.toml
 
-    - name: Run tests with debug output
+    - name: Run tests
       run: |
         source .venv/bin/activate
-        if [ -d "tests" ]; then
-          echo "Test directory contents:"
-          ls -la tests/
-          echo "Running tests with verbose output and debug logging:"
-          PYTHONPATH=$PWD python -m pytest tests/ -v --capture=no
-        else
-          echo "No tests directory found, skipping tests"
-        fi
+        python -m pytest tests/ -v
 
   build:
     needs: test
