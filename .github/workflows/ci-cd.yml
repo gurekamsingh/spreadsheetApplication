@@ -69,6 +69,28 @@ jobs:
         file: ./coverage.xml
         fail_ci_if_error: false
 
+    - name: Verify application startup
+      run: |
+        source .venv/bin/activate
+        # Start the application in the background
+        python run.py &
+        APP_PID=$!
+        
+        # Wait for the application to start
+        sleep 5
+        
+        # Check if the application is running
+        if ps -p $APP_PID > /dev/null; then
+          echo "Application started successfully"
+          # Test basic API endpoint
+          curl -f http://localhost:5000/health || exit 1
+          # Kill the application
+          kill $APP_PID
+        else
+          echo "Application failed to start"
+          exit 1
+        fi
+
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -90,9 +112,12 @@ jobs:
       run: |
         uv venv
         source .venv/bin/activate
+        which python
+        python --version
 
     - name: Install dependencies
       run: |
+        source .venv/bin/activate
         uv pip install -e .
 
     - name: Build Docker image
@@ -148,5 +173,24 @@ jobs:
         # Wait for deployment to be ready
         minikube kubectl -- rollout status deployment/spreadsheet-app -n spreadsheet-app
         
-        # Get the service URL
-        minikube service spreadsheet-app -n spreadsheet-app --url 
+        # Get the service URL and test the application
+        SERVICE_URL=$(minikube service spreadsheet-app -n spreadsheet-app --url)
+        echo "Waiting for service to be available..."
+        until curl -f $SERVICE_URL/health; do
+          echo "Service not ready yet, waiting..."
+          sleep 5
+        done
+        
+        echo "Application is available at: $SERVICE_URL"
+        
+        # Verify all pods are running
+        minikube kubectl -- get pods -n spreadsheet-app
+        
+        # Check application logs
+        minikube kubectl -- logs deployment/spreadsheet-app -n spreadsheet-app
+        
+        # Verify service is accessible
+        curl -f $SERVICE_URL/health || exit 1
+        
+        # Optional: Run additional tests against the deployed application
+        # Example: curl -f $SERVICE_URL/api/endpoint || exit 1 
