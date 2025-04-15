@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-from config.config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
+from config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
 from extensions import socketio
 from flask import Flask, send_from_directory
 from routes.auth import auth_bp
