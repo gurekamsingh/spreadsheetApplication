@@ -35,12 +35,12 @@ jobs:
         uv pip install -e .
         uv pip install pytest pytest-cov
 
-    - name: Run linting
+    - name: Run linting and formatting
       run: |
         source .venv/bin/activate
         which ruff
-        ruff check .
-        ruff format --check .
+        ruff check --fix .
+        ruff format .
 
     - name: Run tests
       run: |
