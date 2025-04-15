@@ -55,6 +55,7 @@ jobs:
       if: steps.check_tests.outputs.tests_exist == 'true'
       run: |
         source .venv/bin/activate
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
         python -m pytest backend/test/ --cov=backend --cov-report=xml
 
     - name: Skip tests
@@ -72,6 +73,7 @@ jobs:
     - name: Verify application startup
       run: |
         source .venv/bin/activate
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
         # Start the application in the background
         python run.py &
         APP_PID=$!
