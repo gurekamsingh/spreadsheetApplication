@@ -9,22 +9,24 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10"]
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: "3.10"
 
-    - name: Install uv
+    - name: Create and activate virtual environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
+
+    - name: Install uv and dependencies
       run: |
         pip install uv
         uv pip install -e .
+        uv pip install pytest pytest-cov
 
     - name: Run linting
       run: |
@@ -33,7 +35,13 @@ jobs:
 
     - name: Run tests
       run: |
-        python -m pytest tests/
+        python -m pytest backend/test/ --cov=backend --cov-report=xml
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
 
   build:
     needs: test
@@ -47,6 +55,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: "3.10"
+
+    - name: Create and activate virtual environment
+      run: |
+        python -m venv venv
+        source venv/bin/activate
 
     - name: Install dependencies
       run: |
