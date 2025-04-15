@@ -17,9 +17,6 @@ dependencies = [
     "werkzeug>=3.0.0"
 ]
 
-[tool.uv]
-pip = "24.0.0"
-
 [tool.ruff]
 # Line length configuration
 line-length = 88
