@@ -4,11 +4,11 @@ import os
 import sys
 from pathlib import Path
 
-from backend.config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
-from backend.extensions import socketio
+from config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
+from extensions import socketio
 from flask import Flask, send_from_directory
-from backend.routes.auth import auth_bp
-from backend.routes.spreadsheet import spreadsheet_bp
+from routes.auth import auth_bp
+from routes.spreadsheet import spreadsheet_bp
 
 # Add the root directory to the Python path
 root_dir = str(Path(__file__).parent.parent)
