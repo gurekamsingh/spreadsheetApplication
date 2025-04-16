@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-from flask import Flask, send_from_directory
+from flask import Flask, jsonify, send_from_directory
 
 from backend.config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
 from backend.extensions import socketio
@@ -42,6 +42,11 @@ def create_app():
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(spreadsheet_bp)
+
+    # Add health check endpoint
+    @app.route("/health")
+    def health():
+        return jsonify({"status": "healthy"}), 200
 
     # Add route for root URL to serve index.html
     @app.route("/")
