@@ -1,1 +1,1 @@
-"""Utilities package initialization.""" 
+"""Utilities package initialization."""

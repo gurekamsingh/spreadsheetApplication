@@ -1,17 +1,17 @@
 """Configuration package initialization."""
 
 from .config import (
+    ACTIVE_USERS_KEY,
+    DB_PATH,
     DEBUG,
     HOST,
+    LOCK_KEY,
     PORT,
-    SECRET_KEY,
-    STATIC_FOLDER,
-    DB_PATH,
+    REDIS_DB,
     REDIS_HOST,
     REDIS_PORT,
-    REDIS_DB,
     REDIS_TIMEOUT,
-    LOCK_KEY,
-    ACTIVE_USERS_KEY,
+    SECRET_KEY,
+    STATIC_FOLDER,
     WRITE_QUEUE_KEY,
-) 
+)
