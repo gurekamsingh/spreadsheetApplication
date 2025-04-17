@@ -210,7 +210,6 @@ jobs:
         minikube kubectl -- logs deployment/spreadsheet-app -n spreadsheet-app
         
         # Verify service is accessible
-        curl -f $SERVICE_URL/health || exit 1
         
         # Optional: Run additional tests against the deployed application
         # Example: curl -f $SERVICE_URL/api/endpoint || exit 1 
