@@ -148,7 +148,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Minikube
-      uses: manuel-packeisen/setup-minikube@v2.7.1
+      uses: manuel-packeisen/setup-minikube@v1.35.0
       with:
         minikube version: 'latest'
         kubernetes version: 'v1.28.0'
