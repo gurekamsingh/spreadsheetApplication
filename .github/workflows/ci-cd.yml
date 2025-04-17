@@ -147,13 +147,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Minikube
-      uses: manuel-packeisen/setup-minikube@v2.0.0
-      with:
-        minikube version: 'latest'
-        kubernetes version: 'v1.28.0'
-        driver: 'docker'
-        start args: '--cpus=2 --memory=4g --disk-size=20g'
+    - name: Install Minikube
+      run: |
+        curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        chmod +x minikube
+        sudo mv minikube /usr/local/bin/
+
+    - name: Start Minikube
+      run: |
+        minikube start --driver=docker
+
+    # - name: Set up Minikube
+    #   uses: manuel-packeisen/setup-minikube@v1.35.0
+    #   with:
+    #     minikube version: 'latest'
+    #     kubernetes version: 'v1.28.0'
+    #     driver: 'docker'
+    #     start args: '--cpus=2 --memory=4g --disk-size=20g'
 
     - name: Configure kubectl
       run: |
@@ -176,12 +186,20 @@ jobs:
         minikube kubectl -- rollout status deployment/spreadsheet-app -n spreadsheet-app
         
         # Get the service URL and test the application
-        SERVICE_URL=$(minikube service spreadsheet-app -n spreadsheet-app --url)
+        SERVICE_URL=$(minikube service spreadsheet-app-service -n spreadsheet-app --url)
         echo "Waiting for service to be available..."
-        until curl -f $SERVICE_URL/health; do
+        MAX_WAIT=60  # Wait for max 60 seconds
+        WAITED=0
+        until curl -f $SERVICE_URL/health || [ $WAITED -ge $MAX_WAIT ]; do
           echo "Service not ready yet, waiting..."
           sleep 5
+          WAITED=$((WAITED + 5))
         done
+
+        if [ $WAITED -ge $MAX_WAIT ]; then
+          echo "ERROR: Service did not become available in time"
+          exit 1
+        fi
         
         echo "Application is available at: $SERVICE_URL"
         
@@ -192,7 +210,6 @@ jobs:
         minikube kubectl -- logs deployment/spreadsheet-app -n spreadsheet-app
         
         # Verify service is accessible
-        curl -f $SERVICE_URL/health || exit 1
         
         # Optional: Run additional tests against the deployed application
         # Example: curl -f $SERVICE_URL/api/endpoint || exit 1 
