@@ -2,208 +2,222 @@
 
 A real-time collaborative spreadsheet application for tracking sales data with write access control and real-time updates.
 
-## Features
+## Overview
 
-- User authentication (login/signup)
-- Real-time data updates using Socket.IO
-- Write access management with queue system
-- Visual write access status indicator
-- Sales data management (add, view)
-- Category management
-- Responsive design
+The Spreadsheet Application is a modern web-based solution for managing sales data with real-time collaboration features. It provides a secure, efficient, and user-friendly interface for teams to track and manage sales records while preventing concurrent write conflicts.
 
-## Technologies Used
+## Key Features
+
+- **Real-time Collaboration**
+  - Live updates using Socket.IO
+  - Write access management with queue system
+  - Visual write access status indicators
+  - Concurrent user support
+
+- **Data Management**
+  - Sales data tracking and management
+  - Category-based organization
+  - Data persistence with DuckDB
+  - Real-time data synchronization
+
+- **Security & Access Control**
+  - User authentication system
+  - Write access queue management
+  - Session-based access control
+  - Secure data transmission
+
+- **Deployment Options**
+  - Local development setup
+  - Docker containerization
+  - Kubernetes deployment
+  - CI/CD pipeline integration
+
+## Technology Stack
 
 ### Frontend
-- HTML5, CSS3, JavaScript (ES6+)
-- Bootstrap 5 for responsive design
-- Socket.IO client for real-time updates
+- **Core**: HTML5, CSS3, JavaScript (ES6+)
+- **UI Framework**: Bootstrap 5
+- **Real-time Communication**: Socket.IO Client
+- **Build Tools**: UV Package Manager
 
 ### Backend
-- Python 3.8+
-- Flask 3.0+ (Web framework)
-- Flask-SocketIO 5.3+ (Real-time communication)
-- DuckDB 0.10+ (Database)
-- Redis 5.0+ (Write access management)
-- Python-dotenv 1.0+ (Environment management)
-- Werkzeug 3.0+ (WSGI utilities)
+- **Framework**: Flask 3.0+
+- **Database**: DuckDB 0.10+
+- **Caching**: Redis 5.0+
+- **Real-time**: Flask-SocketIO 5.3+
+- **Security**: Werkzeug 3.0+
 
-### Development Tools
-- UV (Package manager)
-- Ruff (Linting and formatting)
-- Pre-commit (Git hooks)
+### Development & Deployment
+- **Containerization**: Docker
+- **Orchestration**: Kubernetes (Minikube)
+- **CI/CD**: GitHub Actions
+- **Code Quality**: Ruff, Pre-commit
+- **Environment**: Python 3.8+
 
-## Prerequisites
+## Getting Started
+
+### Prerequisites
 
 - Python 3.8 or higher
 - Redis server
 - Git
-- UV package manager
+- Docker (optional)
+- Minikube (optional)
 
-## Installation
+### Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/spreadsheetApplication.git
-cd spreadsheetApplication
-```
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/yourusername/spreadsheetApplication.git
+   cd spreadsheetApplication
+   ```
 
-2. Create and activate a virtual environment:
-```bash
-# Windows
-python -m venv venv
-.\venv\Scripts\activate
+2. **Set Up Virtual Environment**
+   ```bash
+   # Windows
+   python -m venv venv
+   .\venv\Scripts\activate
 
-# Linux/Mac
-python -m venv venv
-source venv/bin/activate
-```
+   # Linux/Mac
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-3. Install dependencies using UV:
-```bash
-uv pip install -e .
-```
+3. **Install Dependencies**
+   ```bash
+   uv pip install -e .
+   ```
 
-4. Set up environment variables:
-```bash
-# Create a .env file in the project root
-FLASK_APP=backend.app
-FLASK_ENV=development
-SECRET_KEY=your-secret-key
-REDIS_HOST=localhost
-REDIS_PORT=6379
-```
+4. **Configure Environment**
+   Create a `.env` file with:
+   ```bash
+   FLASK_APP=backend.app
+   FLASK_ENV=development
+   SECRET_KEY=your-secret-key
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   ```
+
+## Deployment Options
+
+### Local Development
+
+1. **Start Redis Server**
+   ```bash
+   # Windows
+   redis-server
+
+   # Linux/Mac
+   sudo service redis-server start
+   ```
+
+2. **Run Application**
+   ```bash
+   python run.py
+   ```
+
+3. **Access Application**
+   Open http://localhost:5000 in your browser
+
+### Docker Deployment
+
+1. **Build Image**
+   ```bash
+   docker build -t spreadsheet-app .
+   ```
+
+2. **Run Container**
+   ```bash
+   docker run -p 5000:5000 spreadsheet-app
+   ```
+
+### Kubernetes Deployment
+
+1. **Start Minikube**
+   ```bash
+   minikube start
+   ```
+
+2. **Deploy Application**
+   ```bash
+   kubectl apply -f kubernetes/
+   ```
+
+3. **Access Application**
+   ```bash
+   minikube service spreadsheet-app-service
+   ```
 
 ## Project Structure
 
 ```
 spreadsheetApplication/
 ├── backend/
-│   ├── config/
-│   │   └── config.py         # Configuration settings
-│   ├── database/
-│   │   ├── db.py            # Database initialization and connection
-│   │   ├── redis_client.py  # Redis client functions
-│   │   └── schema.sql       # Database schema
-│   ├── routes/
-│   │   ├── auth.py          # Authentication routes
-│   │   └── spreadsheet.py   # Spreadsheet operations routes
-│   ├── utils/               # Utility functions
-│   ├── test/                # Test files
-│   ├── extensions.py        # Flask extensions (SocketIO)
-│   ├── __init__.py         # Package initialization
-│   └── app.py              # Main Flask application
-├── frontend/
-│   ├── index.html          # Login page
-│   ├── signup.html         # Signup page
-│   └── spreadsheet.html    # Main spreadsheet interface
-├── database/
-│   └── spreadsheet.db      # DuckDB database file
-├── kubernetes/             # Kubernetes deployment files
-├── certs/                  # SSL certificates
-├── .github/                # GitHub Actions workflows
-├── .ruff_cache/           # Ruff cache directory
-├── venv/                  # Virtual environment
-├── .env                   # Environment variables
-├── .gitignore            # Git ignore rules
-├── .pre-commit-config.yaml # Pre-commit hooks configuration
-├── Dockerfile            # Docker build configuration
-├── .dockerignore        # Docker ignore rules
-├── generate_cert.py     # Certificate generation script
-├── LICENSE              # Project license
-├── pyproject.toml      # Project configuration
-├── run.py              # Application entry point
-├── setup.py            # Package installation script
-├── view_tables.py      # Database table viewer script
-└── README.md           # Project documentation
+│   ├── config/              # Configuration management
+│   ├── database/           # Database operations
+│   ├── routes/             # API endpoints
+│   ├── utils/              # Utility functions
+│   └── app.py             # Main application
+├── frontend/              # User interface
+├── kubernetes/           # Deployment configurations
+├── tests/               # Test suite
+├── database/           # Local database storage
+├── certs/             # SSL certificates
+├── .github/          # CI/CD workflows
+└── docs/            # Documentation
 ```
 
-## Running the Application
+## Database Management
 
-1. Start Redis server:
-```bash
-# Windows
-redis-server
+The application uses DuckDB for data storage with the following features:
+- Local development: File-based storage
+- Production: Kubernetes persistent volume
+- Automatic schema management
+- Real-time data synchronization
 
-# Linux/Mac
-sudo service redis-server start
-```
+## CI/CD Pipeline
 
-2. Start the Flask application:
-```bash
-python -m backend.app
-```
+The application uses GitHub Actions for continuous integration and deployment:
 
-3. Open your web browser and navigate to:
-```
-http://localhost:5000
-```
+1. **Testing Phase**
+   - Code linting and formatting
+   - Unit and integration tests
+   - Security scanning
 
-## Development Guidelines
+2. **Build Phase**
+   - Docker image creation
+   - Image scanning
+   - Push to Docker Hub
 
-### Code Quality
+3. **Deployment Phase**
+   - Kubernetes deployment
+   - Health checks
+   - Rollback capabilities
 
-This project uses Ruff for linting and code formatting. Configuration is in `pyproject.toml`.
+## Contributing
 
-```bash
-# Check for linting issues
-ruff check .
+We welcome contributions! Please follow these steps:
 
-# Automatically fix linting issues
-ruff check --fix .
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
-# Format code
-ruff format .
-```
+## License
 
-### Pre-commit Hooks
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Pre-commit hooks ensure code quality before each commit:
+## Support
 
-```bash
-# Install pre-commit hooks
-pre-commit install
+For support, please:
+1. Check the [documentation](docs/)
+2. Open an issue on GitHub
+3. Contact the maintainers
 
-# Run hooks manually
-pre-commit run --all-files
-```
+## Acknowledgments
 
-### Write Access System
-
-The application implements a write access system to prevent concurrent edits:
-
-1. Users can request write access
-2. If no one has write access, it's granted immediately
-3. If someone else has write access, the user is added to a queue
-4. Write access is automatically released after 10 seconds of inactivity
-5. When write access is released, it's granted to the next user in the queue
-6. A visual indicator shows when a user has write access
-
-## Security Features
-
-- Session-based authentication
-- Write access control
-- Input validation
-- SQL injection prevention
-- XSS protection
-- CSRF protection
-
-## API Endpoints
-
-### Authentication
-- `POST /signup` - Register a new user
-- `POST /login` - User login
-
-### Spreadsheet Operations
-- `GET /read_data` - Read sales data with queue status
-- `POST /write` - Write new sales data
-- `Socket.IO /request_write_access` - Request write access
-- `Socket.IO /release_write_access` - Release write access
-
-## Future Improvements
-
-- Data export functionality
-- Data filtering and sorting
-- User roles and permissions
-- Data backup system
-- Data visualization features
+- Flask team for the web framework
+- Socket.IO for real-time capabilities
+- DuckDB for efficient data storage
+- Redis for session management
