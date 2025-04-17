@@ -186,7 +186,7 @@ jobs:
         minikube kubectl -- rollout status deployment/spreadsheet-app -n spreadsheet-app
         
         # Get the service URL and test the application
-        SERVICE_URL=$(minikube service spreadsheet-app -n spreadsheet-app --url)
+        SERVICE_URL=$(minikube service spreadsheet-app-service -n spreadsheet-app --url)
         echo "Waiting for service to be available..."
         until curl -f $SERVICE_URL/health; do
           echo "Service not ready yet, waiting..."
