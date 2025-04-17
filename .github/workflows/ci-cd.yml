@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ LAP-29 ]
   pull_request:
-    branches: [ main ]
+    branches: [ LAP-29 ]
 
 jobs:
   test:
@@ -96,7 +96,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/LAP-29'
 
     steps:
     - uses: actions/checkout@v4
@@ -142,13 +142,13 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/LAP-29'
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Minikube
-      uses: manuel-packeisen/setup-minikube@v2.0.0
+      uses: manuel-packeisen/setup-minikube@v2.7.1
       with:
         minikube version: 'latest'
         kubernetes version: 'v1.28.0'
