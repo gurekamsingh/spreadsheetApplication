@@ -38,6 +38,11 @@ ENV/
 instance/
 .webassets-cache
 
+# Database
+*.db
+database/*.db
+spreadsheet.db
+
 # Redis
 *.rdb
 *.aof
@@ -65,3 +70,5 @@ coverage.xml
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# New line at the end of the file
