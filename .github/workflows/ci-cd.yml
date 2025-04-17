@@ -147,13 +147,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Minikube
-      uses: manuel-packeisen/setup-minikube@v1.35.0
-      with:
-        minikube version: 'latest'
-        kubernetes version: 'v1.28.0'
-        driver: 'docker'
-        start args: '--cpus=2 --memory=4g --disk-size=20g'
+    - name: Install Minikube
+      run: |
+        curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        chmod +x minikube
+        sudo mv minikube /usr/local/bin/
+
+    - name: Start Minikube
+      run: |
+        sudo minikube start --driver=docker
+        minikube status
+
+    # - name: Set up Minikube
+    #   uses: manuel-packeisen/setup-minikube@v1.35.0
+    #   with:
+    #     minikube version: 'latest'
+    #     kubernetes version: 'v1.28.0'
+    #     driver: 'docker'
+    #     start args: '--cpus=2 --memory=4g --disk-size=20g'
 
     - name: Configure kubectl
       run: |
