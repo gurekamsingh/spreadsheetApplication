@@ -156,7 +156,6 @@ jobs:
     - name: Start Minikube
       run: |
         minikube start --driver=docker
-        minikube status
 
     # - name: Set up Minikube
     #   uses: manuel-packeisen/setup-minikube@v1.35.0
