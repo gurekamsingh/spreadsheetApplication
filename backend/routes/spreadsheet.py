@@ -1,14 +1,14 @@
 """Spreadsheet routes."""
 
-from extensions import socketio
 from flask import Blueprint, jsonify, request, session
-from utils.auth import login_required
 
-from database.db import get_db
-from database.redis_client import (
+from backend.database.db import get_db
+from backend.database.redis_client import (
     get_queue_status,
     get_redis,
 )
+from backend.extensions import socketio
+from backend.utils.auth import login_required
 
 spreadsheet_bp = Blueprint("spreadsheet", __name__)
 

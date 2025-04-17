@@ -4,11 +4,12 @@ import os
 import sys
 from pathlib import Path
 
-from config.config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
-from extensions import socketio
-from flask import Flask, send_from_directory
-from routes.auth import auth_bp
-from routes.spreadsheet import spreadsheet_bp
+from flask import Flask, jsonify, send_from_directory
+
+from backend.config import DEBUG, PORT, SECRET_KEY, STATIC_FOLDER
+from backend.extensions import socketio
+from backend.routes.auth import auth_bp
+from backend.routes.spreadsheet import spreadsheet_bp
 
 # Add the root directory to the Python path
 root_dir = str(Path(__file__).parent.parent)
@@ -41,6 +42,11 @@ def create_app():
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(spreadsheet_bp)
+
+    # Add health check endpoint
+    @app.route("/health")
+    def health():
+        return jsonify({"status": "healthy"}), 200
 
     # Add route for root URL to serve index.html
     @app.route("/")
