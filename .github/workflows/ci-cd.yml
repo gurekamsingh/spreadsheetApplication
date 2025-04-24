@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ LAP-30 ]
   pull_request:
-    branches: [ main ]
+    branches: [ LAP-30 ]
 
 jobs:
   test:
@@ -96,7 +96,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/LAP-30'
 
     steps:
     - uses: actions/checkout@v4
@@ -142,7 +142,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/LAP-30'
 
     steps:
     - uses: actions/checkout@v4
