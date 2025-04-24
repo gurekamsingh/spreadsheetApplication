@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ LAP-30 ]
 
+env:
+  AWS_REGION: us-west-2
+  EKS_CLUSTER_NAME: spreadsheet-app-cluster
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -147,69 +151,68 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Minikube
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install eksctl
       run: |
-        curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-        chmod +x minikube
-        sudo mv minikube /usr/local/bin/
+        curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+        sudo mv /tmp/eksctl /usr/local/bin
 
-    - name: Start Minikube
+    - name: Install kubectl
       run: |
-        minikube start --driver=docker
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-    # - name: Set up Minikube
-    #   uses: manuel-packeisen/setup-minikube@v1.35.0
-    #   with:
-    #     minikube version: 'latest'
-    #     kubernetes version: 'v1.28.0'
-    #     driver: 'docker'
-    #     start args: '--cpus=2 --memory=4g --disk-size=20g'
-
-    - name: Configure kubectl
+    - name: Check if cluster exists
+      id: check-cluster
       run: |
-        minikube kubectl -- get nodes
-        minikube kubectl -- config view --flatten > kubeconfig.yaml
-        export KUBECONFIG=kubeconfig.yaml
+        if eksctl get cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
+          echo "cluster_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "cluster_exists=false" >> $GITHUB_OUTPUT
+        fi
 
-    - name: Deploy to Minikube
+    - name: Create cluster if not exists
+      if: steps.check-cluster.outputs.cluster_exists == 'false'
+      run: eksctl create cluster -f kubernetes/eks-cluster.yaml
+
+    - name: Update kubeconfig and set context
+      run: |
+        aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+        kubectl config use-context arn:aws:eks:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:cluster/${{ env.EKS_CLUSTER_NAME }}
+        kubectl config current-context
+
+    - name: Deploy to EKS
       run: |
         # Create namespace if it doesn't exist
-        minikube kubectl -- create namespace spreadsheet-app --dry-run=client -o yaml | minikube kubectl -- apply -f -
+        kubectl create namespace spreadsheet-app --dry-run=client -o yaml | kubectl apply -f -
         
-        # Deploy application
-        minikube kubectl -- apply -f kubernetes/ -n spreadsheet-app
+        # Deploy Redis
+        kubectl apply -f kubernetes/redis.yaml
+        
+        # Deploy main application
+        kubectl apply -f kubernetes/deployment.yaml
+        
+        # Deploy ingress
+        kubectl apply -f kubernetes/ingress.yaml
         
         # Update deployment with new image
-        minikube kubectl -- set image deployment/spreadsheet-app spreadsheet-app=${{ secrets.DOCKERHUB_USERNAME }}/spreadsheet-app:${{ github.sha }} -n spreadsheet-app
+        kubectl set image deployment/spreadsheet-app spreadsheet-app=${{ secrets.DOCKERHUB_USERNAME }}/spreadsheet-app:${{ github.sha }} -n spreadsheet-app
         
         # Wait for deployment to be ready
-        minikube kubectl -- rollout status deployment/spreadsheet-app -n spreadsheet-app
+        kubectl rollout status deployment/spreadsheet-app -n spreadsheet-app
         
-        # Get the service URL and test the application
-        SERVICE_URL=$(minikube service spreadsheet-app-service -n spreadsheet-app --url)
-        echo "Waiting for service to be available..."
-        MAX_WAIT=60  # Wait for max 60 seconds
-        WAITED=0
-        until curl -f $SERVICE_URL/health || [ $WAITED -ge $MAX_WAIT ]; do
-          echo "Service not ready yet, waiting..."
-          sleep 5
-          WAITED=$((WAITED + 5))
-        done
-
-        if [ $WAITED -ge $MAX_WAIT ]; then
-          echo "ERROR: Service did not become available in time"
-          exit 1
-        fi
-        
-        echo "Application is available at: $SERVICE_URL"
+        # Get the service URL
+        SERVICE_URL=$(kubectl get svc spreadsheet-app-service -n spreadsheet-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        echo "Application is available at: http://$SERVICE_URL"
         
         # Verify all pods are running
-        minikube kubectl -- get pods -n spreadsheet-app
+        kubectl get pods -n spreadsheet-app
         
         # Check application logs
-        minikube kubectl -- logs deployment/spreadsheet-app -n spreadsheet-app
-        
-        # Verify service is accessible
-        
-        # Optional: Run additional tests against the deployed application
-        # Example: curl -f $SERVICE_URL/api/endpoint || exit 1 
+        kubectl logs deployment/spreadsheet-app -n spreadsheet-app 
