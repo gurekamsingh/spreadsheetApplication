@@ -18,11 +18,29 @@ spec:
         image: gurekam22/spreadsheet-app:latest
         ports:
         - containerPort: 5000
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "50m"
+            memory: "64Mi"
         env:
         - name: FLASK_ENV
           value: "production"
         - name: REDIS_HOST
-          value: "redis-service"
+          value: "localhost"
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "50m"
+            memory: "64Mi"
 ---
 apiVersion: v1
 kind: Service

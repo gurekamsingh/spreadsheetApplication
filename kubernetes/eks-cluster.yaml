@@ -1,0 +1,23 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: spreadsheet-app-cluster
+  region: us-west-2  # You can change this to your preferred region
+  version: "1.27"
+
+managedNodeGroups:
+  - name: initial-nodes
+    instanceType: t3.medium
+    minSize: 1
+    maxSize: 2
+    desiredCapacity: 1
+    privateNetworking: true
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        ebs: true
+        efs: true
+        fsx: true
+        albIngress: true
+        cloudWatch: true 
