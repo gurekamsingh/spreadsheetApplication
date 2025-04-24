@@ -46,29 +46,26 @@ jobs:
       if: steps.check-cluster.outputs.cluster_exists == 'false'
       run: eksctl create cluster -f kubernetes/eks-cluster.yaml
 
-    - name: Update kubeconfig
-      run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-
-    - name: Install nginx ingress controller
+    - name: Update kubeconfig and set context
       run: |
-        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-        helm repo update
-        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-          --namespace ingress-nginx \
-          --create-namespace \
-          --set controller.service.type=LoadBalancer
+        aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+        kubectl config use-context arn:aws:eks:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:cluster/${{ env.EKS_CLUSTER_NAME }}
+        kubectl config current-context
 
     - name: Deploy application
       run: |
+        # Create namespace if it doesn't exist
         kubectl create namespace spreadsheet-app --dry-run=client -o yaml | kubectl apply -f -
+        
+        # Deploy Redis
         kubectl apply -f kubernetes/redis.yaml
+        
+        # Deploy main application
         kubectl apply -f kubernetes/deployment.yaml
+        
+        # Deploy ingress
         kubectl apply -f kubernetes/ingress.yaml
-
-    - name: Get Application URL
-      run: |
-        echo "Waiting for ingress to be ready..."
-        sleep 30
-        INGRESS_HOST=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        echo "Application URL: http://$INGRESS_HOST"
-        echo "url=http://$INGRESS_HOST" >> $GITHUB_OUTPUT 
+        
+        # Wait for pods to be ready
+        kubectl wait --for=condition=ready pod -l app=spreadsheet-app -n spreadsheet-app --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=redis -n spreadsheet-app --timeout=300s 
