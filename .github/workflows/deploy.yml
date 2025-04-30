@@ -1,0 +1,71 @@
+name: Deploy to EKS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-west-2
+  EKS_CLUSTER_NAME: spreadsheet-app-cluster
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install eksctl
+      run: |
+        curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+        sudo mv /tmp/eksctl /usr/local/bin
+
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+    - name: Check if cluster exists
+      id: check-cluster
+      run: |
+        if eksctl get cluster --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
+          echo "cluster_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "cluster_exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create cluster if not exists
+      if: steps.check-cluster.outputs.cluster_exists == 'false'
+      run: eksctl create cluster -f kubernetes/eks-cluster.yaml
+
+    - name: Update kubeconfig and set context
+      run: |
+        aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+        kubectl config use-context arn:aws:eks:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:cluster/${{ env.EKS_CLUSTER_NAME }}
+        kubectl config current-context
+
+    - name: Deploy application
+      run: |
+        # Create namespace if it doesn't exist
+        kubectl create namespace spreadsheet-app --dry-run=client -o yaml | kubectl apply -f -
+        
+        # Deploy Redis
+        kubectl apply -f kubernetes/redis.yaml
+        
+        # Deploy main application
+        kubectl apply -f kubernetes/deployment.yaml
+        
+        # Deploy ingress
+        kubectl apply -f kubernetes/ingress.yaml
+        
+        # Wait for pods to be ready
+        kubectl wait --for=condition=ready pod -l app=spreadsheet-app -n spreadsheet-app --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=redis -n spreadsheet-app --timeout=300s 
