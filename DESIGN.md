@@ -24,9 +24,9 @@
 
 4. **Infrastructure Layer**
    - Containerization (Docker)
-   - Orchestration (Kubernetes)
-   - Monitoring
-   - Logging
+   - Orchestration (Amazon EKS)
+   - Monitoring (AWS CloudWatch)
+   - Logging (AWS CloudWatch Logs)
 
 ### Communication Flow
 
@@ -39,8 +39,8 @@
 2. **Inter-Service Communication**
    - Redis pub/sub for real-time updates
    - Database transactions
-   - Service discovery
-   - Load balancing
+   - Service discovery (EKS)
+   - Load balancing (AWS ELB)
 
 ## Sequence Diagrams
 
@@ -244,12 +244,11 @@ spreadsheetApplication/
 │   ├── utils/              # Utility functions
 │   └── app.py             # Main application
 ├── frontend/              # User interface
-├── kubernetes/           # Deployment configurations
+├── kubernetes/           # EKS deployment configurations
 ├── tests/               # Test suite
 ├── database/           # Local database storage
 ├── certs/             # SSL certificates
-├── .github/          # CI/CD workflows
-└── docs/            # Documentation
+└── docs/             # Documentation
 ```
 
 ## Deployment Architecture
@@ -290,4 +289,72 @@ spreadsheetApplication/
    - Error notifications
    - Performance alerts
    - Security alerts
-   - Capacity warnings 
+   - Capacity warnings
+
+## Infrastructure Design
+
+### Amazon EKS Architecture
+
+1. **Cluster Configuration**
+   - Managed node groups
+   - Auto-scaling groups
+   - Network policies
+   - Security groups
+
+2. **Deployment Strategy**
+   - Rolling updates
+   - Blue-green deployments
+   - Canary releases
+   - Rollback procedures
+
+3. **Resource Management**
+   - Resource quotas
+   - Pod resource limits
+   - Horizontal Pod Autoscaling
+   - Vertical Pod Autoscaling
+
+4. **Monitoring & Logging**
+   - CloudWatch metrics
+   - CloudWatch Logs
+   - Prometheus integration
+   - Grafana dashboards
+
+### CI/CD Pipeline
+
+1. **Source Control**
+   - Git repository
+   - Branch protection rules
+   - Code review requirements
+   - Automated testing
+
+2. **Build Process**
+   - Docker image building
+   - Security scanning
+   - Unit testing
+   - Integration testing
+
+3. **Deployment Process**
+   - AWS CodePipeline integration
+   - EKS deployment automation
+   - Environment promotion
+   - Rollback capabilities
+
+## Development Workflow
+
+1. **Issue Tracking**
+   - Project management
+   - Sprint planning
+   - Bug tracking
+   - Feature requests
+
+2. **Code Management**
+   - Git workflow
+   - Branch naming convention (feature/description)
+   - Commit message format (description)
+   - Pull request process
+
+3. **Quality Assurance**
+   - Automated testing
+   - Code review process
+   - Performance testing
+   - Security scanning
