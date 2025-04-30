@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ LAP-30 ]
+    branches: [ main ]
   pull_request:
-    branches: [ LAP-30 ]
+    branches: [ main ]
 
 env:
   AWS_REGION: us-west-2
@@ -100,7 +100,7 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/LAP-30'
+    if: github.ref == 'refs/heads/main'
 
     steps:
     - uses: actions/checkout@v4
@@ -146,7 +146,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/LAP-30'
+    if: github.ref == 'refs/heads/main'
 
     steps:
     - uses: actions/checkout@v4
