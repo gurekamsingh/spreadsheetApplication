@@ -113,27 +113,115 @@ The Spreadsheet Application is a modern web-based solution for managing sales da
 
 3. **Access Application**
    Open http://localhost:5000 in your browser
+   
+   Note: Make sure Redis server is running and the application has started successfully. You should see the login page when accessing the URL.
 
 #### EKS Deployment
 
 1. **Configure AWS CLI**
    ```bash
    aws configure
+   # Enter your AWS Access Key ID
+   # Enter your AWS Secret Access Key
+   # Enter your default region (e.g., us-west-2)
+   # Enter your preferred output format (json)
    ```
 
 2. **Create EKS Cluster**
    ```bash
-   eksctl create cluster --name spreadsheet-app --region your-region --nodegroup-name standard-workers --node-type t3.medium --nodes 3 --nodes-min 1 --nodes-max 4 --managed
+   # Create cluster using the provided configuration
+   eksctl create cluster -f kubernetes/eks-cluster.yaml
+   
+   # Verify cluster creation
+   eksctl get cluster --name spreadsheet-app-cluster --region us-west-2
    ```
 
-3. **Deploy Application**
+3. **Update kubeconfig**
    ```bash
-   kubectl apply -f kubernetes/
+   # Update kubeconfig to connect to your cluster
+   aws eks update-kubeconfig --name spreadsheet-app-cluster --region us-west-2
+   
+   # Verify connection
+   kubectl config current-context
    ```
 
-4. **Access Application**
+4. **Deploy Application**
    ```bash
-   kubectl get svc spreadsheet-app-service
+   # Create namespace
+   kubectl create namespace spreadsheet-app
+   
+   # Deploy Redis
+   kubectl apply -f kubernetes/redis.yaml
+   
+   # Deploy main application
+   kubectl apply -f kubernetes/deployment.yaml
+   
+   # Deploy ingress (if needed)
+   kubectl apply -f kubernetes/ingress.yaml
+   ```
+
+5. **Monitor Deployment**
+   ```bash
+   # Check pod status
+   kubectl get pods -n spreadsheet-app
+   
+   # Check service status
+   kubectl get svc -n spreadsheet-app
+   
+   # View application logs
+   kubectl logs -n spreadsheet-app deployment/spreadsheet-app
+   ```
+
+6. **Access Application**
+   There are multiple ways to access your application in EKS:
+
+   a. **Using LoadBalancer (Recommended for Production)**
+   ```bash
+   # Get the LoadBalancer URL
+   kubectl get svc spreadsheet-app-service -n spreadsheet-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+   ```
+   The application will be available at: `http://<loadbalancer-url>`
+   - This URL is publicly accessible
+   - It may take a few minutes for the LoadBalancer to be fully provisioned
+   - The URL remains stable unless you delete and recreate the service
+
+   b. **Using Port Forwarding (For Development/Testing)**
+   ```bash
+   # Forward local port 8080 to service port 80
+   kubectl port-forward -n spreadsheet-app svc/spreadsheet-app-service 8080:80
+   ```
+   Then access the application at: `http://localhost:8080`
+   - This method is useful for local testing
+   - The connection will be terminated when you stop the port-forward command
+   - Only accessible from your local machine
+
+   c. **Using Ingress (If configured)**
+   ```bash
+   # Get the ingress host
+   kubectl get ingress -n spreadsheet-app
+   ```
+   Access the application using the hostname from the ingress
+   - Requires proper DNS configuration
+   - Supports custom domains and SSL
+   - More suitable for production environments
+
+   Note: 
+   - The application might take a few minutes to be fully accessible after deployment
+   - If you can't access the application, check the troubleshooting section
+   - For security in production, consider setting up HTTPS and proper authentication
+
+7. **Troubleshooting**
+   - If pods are not starting, check logs: `kubectl logs -n spreadsheet-app <pod-name>`
+   - If service is not accessible, verify LoadBalancer status: `kubectl describe svc spreadsheet-app-service -n spreadsheet-app`
+   - For memory issues, check pod status: `kubectl describe pod -n spreadsheet-app -l app=spreadsheet-app`
+
+8. **Scaling and Updates**
+   ```bash
+   # Scale the application
+   kubectl scale deployment spreadsheet-app -n spreadsheet-app --replicas=3
+   
+   # Update the application
+   kubectl set image deployment/spreadsheet-app spreadsheet-app=your-new-image:tag -n spreadsheet-app
    ```
 
 ## Project Structure

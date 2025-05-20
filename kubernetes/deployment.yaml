@@ -21,15 +21,15 @@ spec:
         resources:
           requests:
             cpu: "25m"
-            memory: "32Mi"
+            memory: "128Mi"
           limits:
-            cpu: "50m"
-            memory: "64Mi"
+            cpu: "100m"
+            memory: "256Mi"
         env:
         - name: FLASK_ENV
           value: "production"
         - name: REDIS_HOST
-          value: "localhost"
+          value: "redis-service"
       - name: redis
         image: redis:latest
         ports:
@@ -53,4 +53,4 @@ spec:
   ports:
   - port: 80
     targetPort: 5000
-  type: ClusterIP 
+  type: LoadBalancer 
